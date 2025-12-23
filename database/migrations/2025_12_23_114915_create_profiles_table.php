@@ -18,12 +18,27 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->string('user_unique_id', 100)->unique();
+            // Akademik
+            $table->string('student_id_number', 50)->nullable();
+
+            $table->foreignId('faculty_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            $table->foreignId('study_program_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            $table->year('entry_year')->nullable();
+            $table->year('graduation_year')->nullable();
+
+            // Umum
             $table->string('image')->nullable();
             $table->string('phone', 20)->nullable();
 
-            $table->year('graduation_year')->nullable();
-
+            // Profil (terutama alumni)
             $table->text('testimonial')->nullable();
             $table->text('bio')->nullable();
             $table->text('education')->nullable();
@@ -32,7 +47,7 @@ return new class extends Migration
 
             $table->string('linkedin_url')->nullable();
             $table->string('cv_file')->nullable();
-            
+
             $table->timestamps();
         });
     }

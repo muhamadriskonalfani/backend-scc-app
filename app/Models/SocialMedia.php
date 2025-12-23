@@ -6,5 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class SocialMedia extends Model
 {
-    //
+    protected $fillable = [
+        'user_id',
+        'platform',
+        'url',
+    ];
+
 }

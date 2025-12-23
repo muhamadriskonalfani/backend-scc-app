@@ -20,7 +20,7 @@ return new class extends Migration
 
             $table->text('message');
             $table->enum('type', ['job', 'system'])->default('system');
-            $table->boolean('is_read')->default(false);
+            $table->enum('read_status', ['unread', 'read'])->default('unread');
 
             $table->timestamps();
         });
