@@ -8,11 +8,6 @@ class Profile extends Model
 {
     protected $fillable = [
         'user_id',
-        'student_id_number',
-        'faculty_id',
-        'study_program_id',
-        'entry_year',
-        'graduation_year',
         'image',
         'phone',
         'testimonial',
@@ -24,4 +19,13 @@ class Profile extends Model
         'cv_file',
     ];
 
+    public function faculty()
+    {
+        return $this->belongsTo(Faculty::class);
+    }
+
+    public function studyProgram()
+    {
+        return $this->belongsTo(StudyProgram::class);
+    }
 }

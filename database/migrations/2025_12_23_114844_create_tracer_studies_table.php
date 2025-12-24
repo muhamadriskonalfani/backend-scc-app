@@ -19,7 +19,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('full_name');
-            $table->string('student_id_number', 50);
+            $table->string('student_id_number', 50)->unique();
 
             $table->foreignId('faculty_id')
                 ->constrained()
@@ -29,11 +29,11 @@ return new class extends Migration
                 ->constrained()
                 ->restrictOnDelete();
 
-            $table->string('domicile');
-            $table->string('whatsapp_number', 20);
-
             $table->year('entry_year');
-            $table->year('graduation_year');
+            $table->year('graduation_year')->nullable();
+
+            $table->string('domicile')->nullable();
+            $table->string('whatsapp_number', 20)->nullable();
 
             $table->string('current_workplace')->nullable();
             $table->integer('current_job_duration_months')->nullable();

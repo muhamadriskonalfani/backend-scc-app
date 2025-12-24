@@ -11,4 +11,9 @@ Route::get('/user', function (Request $request) {
 Route::prefix('mobile')->group(function () {
     Route::get('/register-meta', [MobileAuthController::class, 'registerMeta']);
     Route::post('/register', [MobileAuthController::class, 'register']);
+    Route::post('/login', [MobileAuthController::class, 'login']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [MobileAuthController::class, 'logout']);
+    });
 });

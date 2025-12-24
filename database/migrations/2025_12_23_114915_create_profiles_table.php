@@ -18,27 +18,9 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            // Akademik
-            $table->string('student_id_number', 50)->nullable();
-
-            $table->foreignId('faculty_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
-
-            $table->foreignId('study_program_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
-
-            $table->year('entry_year')->nullable();
-            $table->year('graduation_year')->nullable();
-
-            // Umum
             $table->string('image')->nullable();
             $table->string('phone', 20)->nullable();
 
-            // Profil (terutama alumni)
             $table->text('testimonial')->nullable();
             $table->text('bio')->nullable();
             $table->text('education')->nullable();
