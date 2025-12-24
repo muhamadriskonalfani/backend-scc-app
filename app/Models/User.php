@@ -49,6 +49,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function tracerStudy()
+    {
+        return $this->hasOne(TracerStudy::class);
+    }
+
     public function profile()
     {
         return $this->hasOne(Profile::class);

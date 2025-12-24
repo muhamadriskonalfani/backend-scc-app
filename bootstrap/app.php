@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'alumni' => \App\Http\Middleware\EnsureUserIsAlumni::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

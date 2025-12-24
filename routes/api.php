@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Mobile\Auth\AuthController as MobileAuthController;
+use App\Http\Controllers\Mobile\TracerStudy\TracerStudyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +17,11 @@ Route::prefix('mobile')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [MobileAuthController::class, 'logout']);
     });
+});
+
+Route::prefix('mobile')->middleware(['auth:sanctum', 'alumni'])->group(function () {
+    // Tracer Study
+    Route::get('/tracer-study', [TracerStudyController::class, 'index']);
+    Route::put('/tracer-study', [TracerStudyController::class, 'update']);
+    Route::get('/tracer-study/status', [TracerStudyController::class, 'status']);
 });

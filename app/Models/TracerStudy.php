@@ -22,4 +22,14 @@ class TracerStudy extends Model
         'job_title',
     ];
 
+    public function faculty()
+    {
+        return $this->belongsTo(\App\Models\Faculty::class);
+    }
+
+    public function studyProgram()
+    {
+        return $this->belongsTo(\App\Models\StudyProgram::class);
+    }
+
 }
