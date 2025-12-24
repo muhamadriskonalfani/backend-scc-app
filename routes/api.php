@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Mobile\Auth\AuthController as MobileAuthController;
+use App\Http\Controllers\Mobile\Profile\ProfileController;
 use App\Http\Controllers\Mobile\TracerStudy\TracerStudyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,4 +25,10 @@ Route::prefix('mobile')->middleware(['auth:sanctum', 'alumni'])->group(function 
     Route::get('/tracer-study', [TracerStudyController::class, 'index']);
     Route::put('/tracer-study', [TracerStudyController::class, 'update']);
     Route::get('/tracer-study/status', [TracerStudyController::class, 'status']);
+});
+
+Route::middleware('auth:sanctum')->prefix('mobile')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::post('/profile', [ProfileController::class, 'store']);
+    Route::put('/profile', [ProfileController::class, 'update']);
 });
