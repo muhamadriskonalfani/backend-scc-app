@@ -1,20 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\Mobile\Career;
+namespace App\Http\Controllers\Mobile\Apprenticeship;
 
 use App\Http\Controllers\Controller;
 use App\Models\CareerInformation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class CareerController extends Controller
+class ApprenticeshipController extends Controller
 {
     /**
-     * List career information (student & alumni)
+     * List informasi magang (student & alumni)
      */
     public function index()
     {
-        $careers = CareerInformation::where('status', 'approved')
+        $data = CareerInformation::where('info_type', 'apprenticeship')
+            ->where('status', 'approved')
             ->latest()
             ->select([
                 'id',
@@ -28,44 +29,44 @@ class CareerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $careers->count() > 0
-                ? 'Data lowongan berhasil diambil'
-                : 'Belum ada lowongan tersedia',
-            'data' => $careers
+            'message' => $data->count() > 0
+                ? 'Data magang berhasil diambil'
+                : 'Belum ada informasi magang',
+            'data' => $data
         ]);
     }
 
     /**
-     * Detail career information
+     * Detail informasi magang
      */
     public function show($id)
     {
-        $career = CareerInformation::with('creator:id,name')
+        $data = CareerInformation::with('creator:id,name')
             ->where('id', $id)
+            ->where('info_type', 'apprenticeship')
             ->where('status', 'approved')
             ->first();
 
-        if (!$career) {
+        if (!$data) {
             return response()->json([
                 'success' => false,
-                'message' => 'Informasi lowongan tidak ditemukan'
+                'message' => 'Informasi magang tidak ditemukan'
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Detail lowongan berhasil diambil',
-            'data' => $career
+            'message' => 'Detail magang berhasil diambil',
+            'data' => $data
         ]);
     }
 
     /**
-     * Alumni: create career info
+     * Alumni: create info magang
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'info_type' => 'required|in:job_vacancy,apprenticeship',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'company_name' => 'required|string|max:255',
@@ -74,32 +75,34 @@ class CareerController extends Controller
             'image' => 'nullable|string',
         ]);
 
-        $career = CareerInformation::create([
+        $data = CareerInformation::create([
             ...$validated,
+            'info_type' => 'apprenticeship',
             'status' => 'pending',
             'created_by' => Auth::id(),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Lowongan berhasil dibuat dan menunggu persetujuan admin',
-            'data' => $career
+            'message' => 'Informasi magang berhasil dibuat dan menunggu persetujuan admin',
+            'data' => $data
         ], 201);
     }
 
     /**
-     * Alumni: update career (ownership protected)
+     * Alumni: update info magang milik sendiri
      */
     public function update(Request $request, $id)
     {
-        $career = CareerInformation::where('id', $id)
+        $data = CareerInformation::where('id', $id)
+            ->where('info_type', 'apprenticeship')
             ->where('created_by', Auth::id())
             ->first();
 
-        if (!$career) {
+        if (!$data) {
             return response()->json([
                 'success' => false,
-                'message' => 'Lowongan tidak ditemukan atau bukan milik Anda'
+                'message' => 'Data tidak ditemukan atau bukan milik Anda'
             ], 404);
         }
 
@@ -112,7 +115,7 @@ class CareerController extends Controller
             'image' => 'nullable|string',
         ]);
 
-        $career->update([
+        $data->update([
             ...$validated,
             'status' => 'pending',
             'approved_by' => null,
@@ -120,26 +123,27 @@ class CareerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Lowongan berhasil diperbarui dan menunggu persetujuan admin',
-            'data' => $career
+            'message' => 'Informasi magang berhasil diperbarui dan menunggu persetujuan admin',
+            'data' => $data
         ]);
     }
 
     /**
-     * Alumni: list career milik sendiri
+     * Alumni: list magang milik sendiri
      */
-    public function myCareers()
+    public function myApprenticeships()
     {
-        $careers = CareerInformation::where('created_by', Auth::id())
+        $data = CareerInformation::where('info_type', 'apprenticeship')
+            ->where('created_by', Auth::id())
             ->latest()
             ->paginate(10);
 
         return response()->json([
             'success' => true,
-            'message' => $careers->count() > 0
-                ? 'Data lowongan Anda berhasil diambil'
-                : 'Anda belum memiliki lowongan',
-            'data' => $careers
+            'message' => $data->count() > 0
+                ? 'Data magang Anda berhasil diambil'
+                : 'Anda belum memiliki informasi magang',
+            'data' => $data
         ]);
     }
 }

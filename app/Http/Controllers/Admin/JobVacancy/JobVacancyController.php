@@ -1,25 +1,26 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Career;
+namespace App\Http\Controllers\Admin\JobVacancy;
 
 use App\Http\Controllers\Controller;
 use App\Models\CareerInformation;
 use Illuminate\Http\Request;
 
-class CareerController extends Controller
+class JobVacancyController extends Controller
 {
     /**
      * List semua loker (admin view)
      */
     public function index(Request $request)
     {
-        $careers = CareerInformation::with(['creator:id,name,email', 'approver:id,name'])
+        $data = CareerInformation::with(['creator:id,name,email', 'approver:id,name'])
+            ->where('info_type', 'job_vacancy')
             ->latest()
             ->paginate(10);
 
         return response()->json([
             'success' => true,
-            'data' => $careers
+            'data' => $data
         ]);
     }
 
@@ -28,10 +29,11 @@ class CareerController extends Controller
      */
     public function show($id)
     {
-        $career = CareerInformation::with(['creator:id,name,email', 'approver:id,name'])
+        $data = CareerInformation::with(['creator:id,name,email', 'approver:id,name'])
+            ->where('info_type', 'job_vacancy')
             ->find($id);
 
-        if (!$career) {
+        if (!$data) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data tidak ditemukan'
@@ -40,7 +42,7 @@ class CareerController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $career
+            'data' => $data
         ]);
     }
 
@@ -49,24 +51,24 @@ class CareerController extends Controller
      */
     public function approve($id, Request $request)
     {
-        $career = CareerInformation::find($id);
+        $data = CareerInformation::find($id);
 
-        if (!$career) {
+        if (!$data || $data->info_type !== 'job_vacancy') {
             return response()->json([
                 'success' => false,
                 'message' => 'Data tidak ditemukan'
             ], 404);
         }
 
-        if ($career->status === 'active') {
+        if ($data->status === 'approved') {
             return response()->json([
                 'success' => false,
                 'message' => 'Loker sudah aktif'
             ], 400);
         }
 
-        $career->update([
-            'status' => 'active',
+        $data->update([
+            'status' => 'approved',
             'approved_by' => $request->user()->id,
         ]);
 
@@ -81,16 +83,16 @@ class CareerController extends Controller
      */
     public function reject($id)
     {
-        $career = CareerInformation::find($id);
+        $data = CareerInformation::find($id);
 
-        if (!$career) {
+        if (!$data || $data->info_type !== 'job_vacancy') {
             return response()->json([
                 'success' => false,
                 'message' => 'Data tidak ditemukan'
             ], 404);
         }
 
-        $career->update([
+        $data->update([
             'status' => 'ended',
         ]);
 

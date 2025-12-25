@@ -1,14 +1,22 @@
 <?php
 
-use App\Http\Controllers\Admin\Career\CareerController as AdminCareerController;
-
 use App\Http\Controllers\Mobile\Auth\AuthController as MobileAuthController;
-use App\Http\Controllers\Mobile\Campus\CampusInformationController;
-use App\Http\Controllers\Mobile\Career\CareerController as MobileCareerController;
-use App\Http\Controllers\Mobile\Profile\ProfileController;
+
 use App\Http\Controllers\Mobile\TracerStudy\TracerStudyController;
+
+use App\Http\Controllers\Mobile\Profile\ProfileController;
+
+use App\Http\Controllers\Mobile\Campus\CampusInformationController;
+
+use App\Http\Controllers\Admin\JobVacancy\JobVacancyController as AdminJobVacancyController;
+use App\Http\Controllers\Mobile\JobVacancy\JobVacancyController as MobileJobVacancyController;
+
+use App\Http\Controllers\Admin\Apprenticeship\ApprenticeshipController as AdminApprenticeshipController;
+use App\Http\Controllers\Mobile\Apprenticeship\ApprenticeshipController as MobileApprenticeshipController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -42,26 +50,57 @@ Route::prefix('mobile')->middleware('auth:sanctum')->group(function () {
     Route::get('/information-campus/{id}', [CampusInformationController::class, 'show']);
 });
 
-Route::prefix('mobile')->middleware('auth:sanctum')->group(function () {
+Route::prefix('mobile')
+    ->middleware(['auth:sanctum', 'status:active'])
+    ->group(function () {
 
     // Semua user mobile (student & alumni)
-    Route::get('/careers', [MobileCareerController::class, 'index']);
-    Route::get('/careers/{id}', [MobileCareerController::class, 'show']);
+    Route::get('/jobvacancy', [MobileJobVacancyController::class, 'index']);
+    Route::get('/jobvacancy/{id}', [MobileJobVacancyController::class, 'show']);
 
     // Alumni only
     Route::middleware('role:alumni')->group(function () {
-        Route::post('/careers', [MobileCareerController::class, 'store']);
-        Route::put('/careers/{id}', [MobileCareerController::class, 'update']);
-        Route::get('/my-careers', [MobileCareerController::class, 'myCareers']);
+        Route::post('/jobvacancy', [MobileJobVacancyController::class, 'store']);
+        Route::put('/jobvacancy/{id}', [MobileJobVacancyController::class, 'update']);
+        Route::get('/my-jobvacancy', [MobileJobVacancyController::class, 'myJobvacancy']);
     });
 });
 
-Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin,super_admin'])
+    ->group(function () {
 
-    Route::get('/careers', [AdminCareerController::class, 'index']);
-    Route::get('/careers/{id}', [AdminCareerController::class, 'show']);
+    Route::get('/jobvacancy', [AdminJobVacancyController::class, 'index']);
+    Route::get('/jobvacancy/{id}', [AdminJobVacancyController::class, 'show']);
 
-    Route::put('/careers/{id}/approve', [AdminCareerController::class, 'approve']);
-    Route::put('/careers/{id}/reject', [AdminCareerController::class, 'reject']);
+    Route::put('/jobvacancy/{id}/approve', [AdminJobVacancyController::class, 'approve']);
+    Route::put('/jobvacancy/{id}/reject', [AdminJobVacancyController::class, 'reject']);
 });
 
+
+Route::prefix('mobile')
+    ->middleware(['auth:sanctum', 'status:active'])
+    ->group(function () {
+
+    // Student & Alumni
+    Route::get('/apprenticeships', [MobileApprenticeshipController::class, 'index']);
+    Route::get('/apprenticeships/{id}', [MobileApprenticeshipController::class, 'show']);
+
+    // Alumni only
+    Route::middleware('role:alumni')->group(function () {
+        Route::post('/apprenticeships', [MobileApprenticeshipController::class, 'store']);
+        Route::put('/apprenticeships/{id}', [MobileApprenticeshipController::class, 'update']);
+        Route::get('/my-apprenticeships', [MobileApprenticeshipController::class, 'myApprenticeships']);
+    });
+});
+
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin,super_admin'])
+    ->group(function () {
+
+    Route::get('/apprenticeships', [AdminApprenticeshipController::class, 'index']);
+    Route::get('/apprenticeships/{id}', [AdminApprenticeshipController::class, 'show']);
+
+    Route::put('/apprenticeships/{id}/approve', [AdminApprenticeshipController::class, 'approve']);
+    Route::put('/apprenticeships/{id}/reject', [AdminApprenticeshipController::class, 'reject']);
+});
