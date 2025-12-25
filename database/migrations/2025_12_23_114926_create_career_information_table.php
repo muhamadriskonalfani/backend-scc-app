@@ -22,7 +22,10 @@ return new class extends Migration
             $table->string('company_name');
             $table->string('location');
 
-            $table->enum('status', ['active', 'ended'])->default('active');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'ended'])
+                ->default('pending');
+
+            $table->date('expired_at')->nullable();
 
             $table->foreignId('created_by')
                 ->constrained('users')

@@ -58,4 +58,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Profile::class);
     }
+
+    public function careerPosts()
+    {
+        return $this->hasMany(CareerInformation::class, 'created_by');
+    }
+
+    public function approvedCareers()
+    {
+        return $this->hasMany(CareerInformation::class, 'approved_by');
+    }
 }
