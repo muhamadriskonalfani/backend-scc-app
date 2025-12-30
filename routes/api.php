@@ -1,27 +1,29 @@
 <?php
 
+// MOBILE 
 use App\Http\Controllers\Mobile\Auth\AuthController as MobileAuthController;
-
 use App\Http\Controllers\Mobile\TracerStudy\TracerStudyController;
-
 use App\Http\Controllers\Mobile\Profile\ProfileController;
-
 use App\Http\Controllers\Mobile\Campus\CampusInformationController;
-
 use App\Http\Controllers\Admin\JobVacancy\JobVacancyController as AdminJobVacancyController;
 use App\Http\Controllers\Mobile\JobVacancy\JobVacancyController as MobileJobVacancyController;
-
 use App\Http\Controllers\Admin\Apprenticeship\ApprenticeshipController as AdminApprenticeshipController;
 use App\Http\Controllers\Mobile\Apprenticeship\ApprenticeshipController as MobileApprenticeshipController;
 
+// ADMIN 
+use App\Http\Controllers\Admin\Auth\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\Dashboard\DashboardController as AdminDashboardController;
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+
+// MOBILE AUTH
 Route::prefix('mobile')->group(function () {
     Route::get('/register-meta', [MobileAuthController::class, 'registerMeta']);
     Route::post('/register', [MobileAuthController::class, 'register']);
@@ -32,6 +34,30 @@ Route::prefix('mobile')->group(function () {
     });
 });
 
+// ADMIN AUTH
+Route::prefix('admin')->group(function () {
+
+    // Login admin & super admin
+    Route::post('/login', [AdminAuthController::class, 'login']);
+
+    Route::middleware(['auth:sanctum', 'admin.status'])->group(function () {
+
+        Route::post('/logout', [AdminAuthController::class, 'logout']);
+
+        // Super Admin only
+        Route::middleware('role:super_admin')->group(function () {
+            Route::post('/register-admin', [AdminAuthController::class, 'registerAdmin']);
+        });
+
+    });
+});
+
+// ADMIN DASHBOARD 
+Route::prefix('admin')->middleware(['auth:sanctum', 'admin.status'])->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+});
+
+// MOBILE TRACER STUDY 
 Route::prefix('mobile')->middleware(['auth:sanctum', 'alumni'])->group(function () {
     // Tracer Study
     Route::get('/tracer-study', [TracerStudyController::class, 'index']);
