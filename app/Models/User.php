@@ -68,4 +68,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(CareerInformation::class, 'approved_by');
     }
+
+    public function adminProfile()
+    {
+        return $this->hasOne(AdminProfile::class);
+    }
 }
