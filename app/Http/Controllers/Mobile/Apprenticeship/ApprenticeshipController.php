@@ -75,11 +75,21 @@ class ApprenticeshipController extends Controller
             'image' => 'nullable|string',
         ]);
 
+        $user = auth()->user();
+
+        if (!$user->tracerStudy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tracer study belum lengkap'
+            ], 422);
+        }
+
         $data = CareerInformation::create([
             ...$validated,
             'info_type' => 'apprenticeship',
             'status' => 'pending',
-            'created_by' => Auth::id(),
+            'created_by' => $user->id,
+            'faculty_id' => $user->tracerStudy->faculty_id,
         ]);
 
         return response()->json([

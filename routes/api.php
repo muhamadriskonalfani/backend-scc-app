@@ -189,13 +189,15 @@ Route::prefix('admin')
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'role:admin,super_admin'])
+    ->middleware(['auth:sanctum', 'role:admin', 'admin.status', 'admin.faculty'])
     ->group(function () {
 
         Route::get('/jobvacancy', [AdminJobVacancyController::class, 'index']);
         Route::get('/jobvacancy/{id}', [AdminJobVacancyController::class, 'show']);
+
         Route::put('/jobvacancy/{id}/approve', [AdminJobVacancyController::class, 'approve']);
         Route::put('/jobvacancy/{id}/reject', [AdminJobVacancyController::class, 'reject']);
+        Route::put('/jobvacancy/{id}/end', [AdminJobVacancyController::class, 'end']);
     });
 
 /*
@@ -204,13 +206,15 @@ Route::prefix('admin')
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'role:admin,super_admin'])
+    ->middleware(['auth:sanctum', 'role:admin', 'admin.status', 'admin.faculty'])
     ->group(function () {
 
         Route::get('/apprenticeships', [AdminApprenticeshipController::class, 'index']);
         Route::get('/apprenticeships/{id}', [AdminApprenticeshipController::class, 'show']);
+        
         Route::put('/apprenticeships/{id}/approve', [AdminApprenticeshipController::class, 'approve']);
         Route::put('/apprenticeships/{id}/reject', [AdminApprenticeshipController::class, 'reject']);
+        Route::put('/apprenticeships/{id}/end', [AdminApprenticeshipController::class, 'end']);
     });
 
 // end

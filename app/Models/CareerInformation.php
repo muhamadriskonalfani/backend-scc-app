@@ -14,9 +14,11 @@ class CareerInformation extends Model
         'company_name',
         'location',
         'status',
-        'expired_at',
         'created_by',
+        'faculty_id',
         'approved_by',
+        'approved_at',
+        'expired_at',
     ];
 
     public function creator()

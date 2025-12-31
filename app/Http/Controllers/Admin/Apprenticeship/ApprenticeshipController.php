@@ -8,85 +8,158 @@ use Illuminate\Http\Request;
 
 class ApprenticeshipController extends Controller
 {
-    public function index()
+    /**
+     * List apprenticeship info (by faculty)
+     */
+    public function index(Request $request)
     {
-        $data = CareerInformation::with(['creator:id,name,email', 'approver:id,name'])
-            ->where('info_type', 'apprenticeship')
+        $facultyId = $request->admin_faculty_id;
+
+        $query = CareerInformation::where('info_type', 'apprenticeship')
+            ->where('faculty_id', $facultyId);
+
+        // Optional filters
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->company_name) {
+            $query->where('company_name', 'like', '%' . $request->company_name . '%');
+        }
+
+        if ($request->from_date && $request->to_date) {
+            $query->whereBetween('created_at', [
+                $request->from_date,
+                $request->to_date
+            ]);
+        }
+
+        $apprenticeships = $query
+            ->with([
+                'creator:id,name,email',
+                'approver:id,name'
+            ])
             ->latest()
             ->paginate(10);
 
         return response()->json([
             'success' => true,
-            'data' => $data
+            'data' => $apprenticeships
         ]);
     }
 
-    public function show($id)
+    /**
+     * Detail apprenticeship
+     */
+    public function show($id, Request $request)
     {
-        $data = CareerInformation::with(['creator:id,name,email', 'approver:id,name'])
-            ->where('info_type', 'apprenticeship')
-            ->find($id);
+        $facultyId = $request->admin_faculty_id;
 
-        if (!$data) {
+        $apprenticeship = CareerInformation::with([
+                'creator:id,name,email',
+                'approver:id,name'
+            ])
+            ->where('id', $id)
+            ->where('info_type', 'apprenticeship')
+            ->where('faculty_id', $facultyId)
+            ->first();
+
+        if (!$apprenticeship) {
             return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Informasi magang tidak ditemukan'
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $data
+            'data' => $apprenticeship
         ]);
     }
 
-    public function approve(Request $request, $id)
+    /**
+     * Approve apprenticeship
+     */
+    public function approve($id, Request $request)
     {
-        $data = CareerInformation::find($id);
+        $apprenticeship = $this->findApprenticeship($id, $request);
 
-        if (!$data || $data->info_type !== 'apprenticeship') {
+        if ($apprenticeship->status === 'approved') {
             return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
-            ], 404);
-        }
-
-        if ($data->status === 'approved') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Loker sudah aktif'
+                'message' => 'Informasi magang sudah aktif'
             ], 400);
         }
 
-        $data->update([
+        $apprenticeship->update([
             'status' => 'approved',
             'approved_by' => $request->user()->id,
+            'approved_at' => now(),
         ]);
 
         return response()->json([
-            'success' => true,
             'message' => 'Informasi magang berhasil disetujui'
         ]);
     }
 
-    public function reject($id)
+    /**
+     * Reject apprenticeship
+     */
+    public function reject($id, Request $request)
     {
-        $data = CareerInformation::find($id);
+        $apprenticeship = $this->findApprenticeship($id, $request);
 
-        if (!$data || $data->info_type !== 'apprenticeship') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
-            ], 404);
-        }
-
-        $data->update([
-            'status' => 'ended',
+        $apprenticeship->update([
+            'status' => 'rejected',
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
         ]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Informasi magang ditolak / diakhiri'
+            'message' => 'Informasi magang berhasil ditolak'
         ]);
+    }
+
+    /**
+     * End apprenticeship
+     */
+    public function end($id, Request $request)
+    {
+        $apprenticeship = $this->findApprenticeship($id, $request);
+
+        if ($apprenticeship->status !== 'approved') {
+            return response()->json([
+                'message' => 'Hanya informasi magang aktif yang dapat diakhiri'
+            ], 400);
+        }
+
+        $apprenticeship->update([
+            'status' => 'ended'
+        ]);
+
+        return response()->json([
+            'message' => 'Informasi magang berhasil diakhiri'
+        ]);
+    }
+
+    /**
+     * ==========================
+     * HELPER
+     * ==========================
+     */
+    private function findApprenticeship(int $id, Request $request)
+    {
+        $facultyId = $request->admin_faculty_id;
+
+        $apprenticeship = CareerInformation::where('id', $id)
+            ->where('info_type', 'apprenticeship')
+            ->where('faculty_id', $facultyId)
+            ->first();
+
+        if (!$apprenticeship) {
+            abort(response()->json([
+                'message' => 'Informasi magang tidak ditemukan atau bukan milik fakultas Anda'
+            ], 404));
+        }
+
+        return $apprenticeship;
     }
 }

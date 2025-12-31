@@ -9,96 +9,157 @@ use Illuminate\Http\Request;
 class JobVacancyController extends Controller
 {
     /**
-     * List semua loker (admin view)
+     * List job vacancies (by faculty)
      */
     public function index(Request $request)
     {
-        $data = CareerInformation::with(['creator:id,name,email', 'approver:id,name'])
-            ->where('info_type', 'job_vacancy')
+        $facultyId = $request->admin_faculty_id;
+
+        $query = CareerInformation::where('info_type', 'job_vacancy')
+            ->where('faculty_id', $facultyId);
+
+        // Optional filters
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->company_name) {
+            $query->where('company_name', 'like', '%' . $request->company_name . '%');
+        }
+
+        if ($request->from_date && $request->to_date) {
+            $query->whereBetween('created_at', [
+                $request->from_date,
+                $request->to_date
+            ]);
+        }
+
+        $vacancies = $query
+            ->with([
+                'creator:id,name,email',
+                'approver:id,name'
+            ])
             ->latest()
             ->paginate(10);
 
         return response()->json([
             'success' => true,
-            'data' => $data
+            'data' => $vacancies
         ]);
     }
 
     /**
-     * Detail loker
+     * Detail job vacancy
      */
-    public function show($id)
+    public function show($id, Request $request)
     {
-        $data = CareerInformation::with(['creator:id,name,email', 'approver:id,name'])
-            ->where('info_type', 'job_vacancy')
-            ->find($id);
+        $facultyId = $request->admin_faculty_id;
 
-        if (!$data) {
+        $vacancy = CareerInformation::with([
+                'creator:id,name,email',
+                'approver:id,name'
+            ])
+            ->where('id', $id)
+            ->where('info_type', 'job_vacancy')
+            ->where('faculty_id', $facultyId)
+            ->first();
+
+        if (!$vacancy) {
             return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Informasi loker tidak ditemukan'
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $data
+            'data' => $vacancy
         ]);
     }
 
     /**
-     * Approve loker
+     * Approve job vacancy
      */
     public function approve($id, Request $request)
     {
-        $data = CareerInformation::find($id);
+        $vacancy = $this->findVacancy($id, $request);
 
-        if (!$data || $data->info_type !== 'job_vacancy') {
+        if ($vacancy->status === 'approved') {
             return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
-            ], 404);
-        }
-
-        if ($data->status === 'approved') {
-            return response()->json([
-                'success' => false,
                 'message' => 'Loker sudah aktif'
             ], 400);
         }
 
-        $data->update([
+        $vacancy->update([
             'status' => 'approved',
             'approved_by' => $request->user()->id,
+            'approved_at' => now(),
         ]);
 
         return response()->json([
-            'success' => true,
             'message' => 'Loker berhasil disetujui'
         ]);
     }
 
     /**
-     * Reject / End loker
+     * Reject job vacancy
      */
-    public function reject($id)
+    public function reject($id, Request $request)
     {
-        $data = CareerInformation::find($id);
+        $vacancy = $this->findVacancy($id, $request);
 
-        if (!$data || $data->info_type !== 'job_vacancy') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
-            ], 404);
-        }
-
-        $data->update([
-            'status' => 'ended',
+        $vacancy->update([
+            'status' => 'rejected',
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
         ]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Loker berhasil ditolak / diakhiri'
+            'message' => 'Loker berhasil ditolak'
         ]);
+    }
+
+    /**
+     * End job vacancy
+     */
+    public function end($id, Request $request)
+    {
+        $vacancy = $this->findVacancy($id, $request);
+
+        if ($vacancy->status !== 'approved') {
+            return response()->json([
+                'message' => 'Hanya loker aktif yang dapat diakhiri'
+            ], 400);
+        }
+
+        $vacancy->update([
+            'status' => 'ended'
+        ]);
+
+        return response()->json([
+            'message' => 'Loker berhasil diakhiri'
+        ]);
+    }
+
+    /**
+     * ==========================
+     * HELPER
+     * ==========================
+     */
+    private function findVacancy(int $id, Request $request)
+    {
+        $facultyId = $request->admin_faculty_id;
+
+        $vacancy = CareerInformation::where('id', $id)
+            ->where('info_type', 'job_vacancy')
+            ->where('faculty_id', $facultyId)
+            ->first();
+
+        if (!$vacancy) {
+            abort(response()->json([
+                'message' => 'Loker tidak ditemukan atau bukan milik fakultas Anda'
+            ], 404));
+        }
+
+        return $vacancy;
     }
 }

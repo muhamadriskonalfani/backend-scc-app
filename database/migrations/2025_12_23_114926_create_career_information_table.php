@@ -25,16 +25,21 @@ return new class extends Migration
             $table->enum('status', ['pending', 'approved', 'rejected', 'ended'])
                 ->default('pending');
 
-            $table->date('expired_at')->nullable();
-
             $table->foreignId('created_by')
                 ->constrained('users')
                 ->cascadeOnDelete();
+
+            $table->foreignId('faculty_id')
+                ->constrained()
+                ->restrictOnDelete();
 
             $table->foreignId('approved_by')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
+
+            $table->timestamp('approved_at')->nullable();
+            $table->date('expired_at')->nullable();
 
             $table->timestamps();
         });
