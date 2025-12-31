@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('campus_information', function (Blueprint $table) {
             $table->id();
+            
+            $table->foreignId('faculty_id')
+                ->nullable()
+                ->constrained()
+                ->restrictOnDelete();
 
             $table->string('image')->nullable();
             $table->string('title');

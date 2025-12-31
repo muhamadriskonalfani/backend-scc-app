@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\JobVacancy\JobVacancyController as AdminJobVacanc
 use App\Http\Controllers\Admin\Apprenticeship\ApprenticeshipController as AdminApprenticeshipController;
 use App\Http\Controllers\Admin\SuperAdmin\AdminManagementController;
 use App\Http\Controllers\Admin\TracerStudy\TracerStudyController as AdminTracerStudyController;
+use App\Http\Controllers\Admin\Campus\CampusInformationController as AdminCampusInformationController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -216,5 +217,20 @@ Route::prefix('admin')
         Route::put('/apprenticeships/{id}/reject', [AdminApprenticeshipController::class, 'reject']);
         Route::put('/apprenticeships/{id}/end', [AdminApprenticeshipController::class, 'end']);
     });
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN CAMPUS INFO
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin,super_admin', 'admin.status'])
+    ->group(function () {
+
+    Route::get('/campus', [AdminCampusInformationController::class, 'index']);
+    Route::post('/campus', [AdminCampusInformationController::class, 'store']);
+    Route::put('/campus/{id}', [AdminCampusInformationController::class, 'update']);
+    Route::put('/campus/{id}/end', [AdminCampusInformationController::class, 'end']);
+});
 
 // end
