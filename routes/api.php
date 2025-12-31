@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\User\UserManagementController as AdminUserManagem
 use App\Http\Controllers\Admin\JobVacancy\JobVacancyController as AdminJobVacancyController;
 use App\Http\Controllers\Admin\Apprenticeship\ApprenticeshipController as AdminApprenticeshipController;
 use App\Http\Controllers\Admin\SuperAdmin\AdminManagementController;
+use App\Http\Controllers\Admin\TracerStudy\TracerStudyController as AdminTracerStudyController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -170,6 +171,17 @@ Route::prefix('admin')
     Route::put('/users/{id}/approve', [AdminUserManagementController::class, 'approve']);
     Route::put('/users/{id}/reject', [AdminUserManagementController::class, 'reject']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN TRACER STUDY
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:super_admin'])
+    ->group(function () {
+        Route::get('/tracer-studies', [AdminTracerStudyController::class, 'index']);
+    });
 
 /*
 |--------------------------------------------------------------------------

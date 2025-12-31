@@ -22,14 +22,18 @@ class TracerStudy extends Model
         'job_title',
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function faculty()
     {
-        return $this->belongsTo(\App\Models\Faculty::class);
+        return $this->belongsTo(Faculty::class);
     }
 
     public function studyProgram()
     {
-        return $this->belongsTo(\App\Models\StudyProgram::class);
+        return $this->belongsTo(StudyProgram::class);
     }
-
 }
