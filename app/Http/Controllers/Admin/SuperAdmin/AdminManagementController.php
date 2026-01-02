@@ -8,9 +8,53 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class AdminManagementController extends Controller
 {
+    /**
+     * List semua admin fakultas
+     */
+    public function index()
+    {
+        $admins = User::where('role', 'admin')
+            ->with([
+                'adminProfile.faculty:id,name'
+            ])
+            ->latest()
+            ->paginate(10);
+
+        return response()->json([
+            'success' => true,
+            'data' => $admins
+        ]);
+    }
+
+    /**
+     * Detail admin
+     */
+    public function show($id)
+    {
+        $admin = User::where('role', 'admin')
+            ->with('adminProfile.faculty:id,name')
+            ->find($id);
+
+        if (!$admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $admin
+        ]);
+    }
+
+    /**
+     * Register admin fakultas
+     */
     public function registerAdmin(Request $request)
     {
         $request->validate([
@@ -62,6 +106,75 @@ class AdminManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal membuat admin',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update admin fakultas
+     */
+    public function update(Request $request, $id)
+    {
+        $admin = User::where('role', 'admin')->find($id);
+
+        if (!$admin) {
+            return response()->json([
+                'message' => 'Admin tidak ditemukan'
+            ], 404);
+        }
+
+        $request->validate([
+            'name' => 'sometimes|required|string|max:100',
+            'email' => [
+                'sometimes',
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($admin->id),
+            ],
+            'password' => 'nullable|min:6|confirmed',
+
+            'faculty_id' => 'sometimes|required|exists:faculties,id',
+            'nip' => 'nullable|string|max:30',
+            'position' => 'nullable|string|max:100',
+            'status' => 'sometimes|in:active,banned',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $admin->update([
+                'name' => $request->name ?? $admin->name,
+                'email' => $request->email ?? $admin->email,
+                'status' => $request->status ?? $admin->status,
+            ]);
+
+            if ($request->password) {
+                $admin->update([
+                    'password' => Hash::make($request->password),
+                ]);
+            }
+
+            if ($admin->adminProfile) {
+                $admin->adminProfile->update([
+                    'faculty_id' => $request->faculty_id ?? $admin->adminProfile->faculty_id,
+                    'nip' => $request->nip ?? $admin->adminProfile->nip,
+                    'position' => $request->position ?? $admin->adminProfile->position,
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Admin berhasil diperbarui'
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Gagal update admin',
                 'error' => $e->getMessage()
             ], 500);
         }

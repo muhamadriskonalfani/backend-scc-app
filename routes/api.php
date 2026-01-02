@@ -155,6 +155,9 @@ Route::prefix('admin')
     ->group(function () {
 
     Route::post('/admins', [AdminManagementController::class, 'registerAdmin']);
+    Route::get('/admins', [AdminManagementController::class, 'index']);
+    Route::get('/admins/{id}', [AdminManagementController::class, 'show']);
+    Route::put('/admins/{id}', [AdminManagementController::class, 'update']);
 });
 
 /*

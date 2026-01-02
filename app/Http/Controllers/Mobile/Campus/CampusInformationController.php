@@ -10,12 +10,23 @@ use Illuminate\Support\Str;
 class CampusInformationController extends Controller
 {
     /**
-     * List informasi kampus (pagination)
+     * List informasi kampus (global + fakultas user)
      */
     public function index(Request $request)
     {
+        $user = $request->user();
+
+        $facultyId = optional($user->tracerStudy)->faculty_id;
+
         $information = CampusInformation::query()
             ->where('status', 'active')
+            ->where(function ($query) use ($facultyId) {
+                $query->whereNull('faculty_id');
+
+                if ($facultyId) {
+                    $query->orWhere('faculty_id', $facultyId);
+                }
+            })
             ->latest()
             ->paginate(10);
 
@@ -40,10 +51,22 @@ class CampusInformationController extends Controller
     /**
      * Detail informasi kampus
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $information = CampusInformation::where('status', 'active')
+        $user = $request->user();
+
+        $facultyId = optional($user->tracerStudy)->faculty_id;
+
+        $information = CampusInformation::query()
+            ->where('status', 'active')
             ->where('id', $id)
+            ->where(function ($query) use ($facultyId) {
+                $query->whereNull('faculty_id');
+
+                if ($facultyId) {
+                    $query->orWhere('faculty_id', $facultyId);
+                }
+            })
             ->first();
 
         if (!$information) {
