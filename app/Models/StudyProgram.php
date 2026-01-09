@@ -13,4 +13,13 @@ class StudyProgram extends Model
         'code',
     ];
 
+    public function faculty()
+    {
+        return $this->belongsTo(Faculty::class);
+    }
+
+    public function tracerStudies()
+    {
+        return $this->hasMany(TracerStudy::class);
+    }
 }

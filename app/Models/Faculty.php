@@ -11,4 +11,18 @@ class Faculty extends Model
         'code',
     ];
 
+    public function studyPrograms()
+    {
+        return $this->hasMany(StudyProgram::class);
+    }
+
+    public function tracerStudies()
+    {
+        return $this->hasMany(TracerStudy::class);
+    }
+
+    public function adminProfiles()
+    {
+        return $this->hasMany(AdminProfile::class);
+    }
 }

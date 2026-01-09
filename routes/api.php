@@ -20,6 +20,8 @@ use App\Http\Controllers\Admin\Apprenticeship\ApprenticeshipController as AdminA
 use App\Http\Controllers\Admin\SuperAdmin\AdminManagementController;
 use App\Http\Controllers\Admin\TracerStudy\TracerStudyController as AdminTracerStudyController;
 use App\Http\Controllers\Admin\Campus\CampusInformationController as AdminCampusInformationController;
+use App\Http\Controllers\Admin\Master\FacultyController as AdminFacultyController;
+use App\Http\Controllers\Admin\Master\StudyProgramController as AdminStudyProgramController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -232,8 +234,46 @@ Route::prefix('admin')
 
     Route::get('/campus', [AdminCampusInformationController::class, 'index']);
     Route::post('/campus', [AdminCampusInformationController::class, 'store']);
-    Route::put('/campus/{id}', [AdminCampusInformationController::class, 'update']);
+
+    // Action khusus (letakkan dulu)
     Route::put('/campus/{id}/end', [AdminCampusInformationController::class, 'end']);
+
+    // CRUD standar
+    Route::get('/campus/{id}', [AdminCampusInformationController::class, 'show']);
+    Route::put('/campus/{id}', [AdminCampusInformationController::class, 'update']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN FACULTIES 
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:super_admin', 'admin.status'])
+    ->group(function () {
+
+    Route::prefix('master')->group(function () {
+        Route::get('/faculties', [AdminFacultyController::class, 'index']);
+        Route::post('/faculties', [AdminFacultyController::class, 'store']);
+        Route::put('/faculties/{id}', [AdminFacultyController::class, 'update']);
+        Route::delete('/faculties/{id}', [AdminFacultyController::class, 'destroy']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN FACULTIES 
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin/master')
+    ->middleware(['auth:sanctum', 'role:super_admin', 'admin.status'])
+    ->group(function () {
+
+    Route::get('/study-programs', [AdminStudyProgramController::class, 'index']);
+    Route::post('/study-programs', [AdminStudyProgramController::class, 'store']);
+    Route::get('/study-programs/{id}', [AdminStudyProgramController::class, 'show']);
+    Route::put('/study-programs/{id}', [AdminStudyProgramController::class, 'update']);
+    Route::delete('/study-programs/{id}', [AdminStudyProgramController::class, 'destroy']);
 });
 
 // end
