@@ -25,6 +25,36 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Detail mahasiswa / alumni
+     */
+    public function show($id, Request $request)
+    {
+        $facultyId = $request->admin_faculty_id;
+
+        $user = User::with([
+                'tracerStudy.faculty:id,name',
+                'tracerStudy.studyProgram:id,name,degree',
+            ])
+            ->whereIn('role', ['student', 'alumni'])
+            ->where('id', $id)
+            ->whereHas('tracerStudy', function ($q) use ($facultyId) {
+                $q->where('faculty_id', $facultyId);
+            })
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User tidak ditemukan atau bukan dari fakultas Anda'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+        ]);
+    }
+
+    /**
      * Approve user
      */
     public function approve($id, Request $request)

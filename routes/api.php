@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Mobile\Auth\AuthController as MobileAuthController;
 use App\Http\Controllers\Mobile\TracerStudy\TracerStudyController as MobileTracerStudyController;
 use App\Http\Controllers\Mobile\Profile\ProfileController as MobileProfileController;
+use App\Http\Controllers\Mobile\CampusDirectory\CampusDirectoryController as MobileCampusDirectoryController;
 use App\Http\Controllers\Mobile\Campus\CampusInformationController as MobileCampusInformationController;
 use App\Http\Controllers\Mobile\JobVacancy\JobVacancyController as MobileJobVacancyController;
 use App\Http\Controllers\Mobile\Apprenticeship\ApprenticeshipController as MobileApprenticeshipController;
@@ -66,6 +67,19 @@ Route::prefix('mobile')
         Route::get('/profile', [MobileProfileController::class, 'show']);
         Route::post('/profile', [MobileProfileController::class, 'store']);
         Route::put('/profile', [MobileProfileController::class, 'update']);
+    });
+
+/*
+|--------------------------------------------------------------------------
+| MOBILE CAMPUS DIRECTORY
+|--------------------------------------------------------------------------
+*/
+Route::prefix('mobile')
+    ->middleware(['auth:sanctum', 'status:active'])
+    ->group(function () {
+
+        Route::get('/directory', [MobileCampusDirectoryController::class, 'index']);
+        Route::get('/directory/{id}', [MobileCampusDirectoryController::class, 'show']);
     });
 
 /*
@@ -176,6 +190,8 @@ Route::prefix('admin')
 
     Route::put('/users/{id}/approve', [AdminUserManagementController::class, 'approve']);
     Route::put('/users/{id}/reject', [AdminUserManagementController::class, 'reject']);
+
+    Route::get('/users/{id}', [AdminUserManagementController::class, 'show']);
 });
 
 /*
@@ -262,7 +278,7 @@ Route::prefix('admin')
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN FACULTIES 
+| ADMIN STUDY PROGRAMS 
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin/master')

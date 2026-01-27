@@ -72,19 +72,24 @@ class CampusInformationController extends Controller
     /**
      * Detail informasi kampus
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
+        $user = $request->user();
+
         $query = CampusInformation::with([
             'faculty:id,name',
             'user:id,name,email'
         ]);
 
-        // Jika admin fakultas (bukan super admin)
-        // if (auth()->user()->role === 'admin') {
-        //     $facultyId = auth()->user()->adminProfile->faculty_id;
+        // Admin fakultas → hanya fakultas sendiri & global
+        if ($user->role === 'admin') {
+            $facultyId = $user->adminProfile->faculty_id;
 
-        //     $query->where('faculty_id', $facultyId);
-        // }
+            $query->where(function ($q) use ($facultyId) {
+                $q->whereNull('faculty_id')
+                ->orWhere('faculty_id', $facultyId);
+            });
+        }
 
         $campus = $query->find($id);
 
