@@ -14,19 +14,27 @@ class TracerStudyController extends Controller
      */
     public function index(Request $request)
     {
-        $tracerStudy = TracerStudy::where('user_id', $request->user()->id)
-            ->with(['faculty:id,name', 'studyProgram:id,name'])
-            ->first();
+        try {
+            $tracerStudy = TracerStudy::where('user_id', $request->user()->id)
+                ->with(['faculty:id,name', 'studyProgram:id,name'])
+                ->first();
 
-        if (!$tracerStudy) {
+            if (!$tracerStudy) {
+                return response()->json([
+                    'message' => 'Tracer study tidak ditemukan'
+                ], 404);
+            }
+
             return response()->json([
-                'message' => 'Tracer study tidak ditemukan'
-            ], 404);
-        }
+                'data' => $tracerStudy
+            ]);
 
-        return response()->json([
-            'data' => $tracerStudy
-        ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Exception: Gagal mengambil data tracer study',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -44,27 +52,35 @@ class TracerStudyController extends Controller
             'job_title' => 'nullable|string|max:100',
         ]);
 
-        $tracerStudy = TracerStudy::where('user_id', $request->user()->id)->first();
+        try {
+            $tracerStudy = TracerStudy::where('user_id', $request->user()->id)->first();
 
-        if (!$tracerStudy) {
+            if (!$tracerStudy) {
+                return response()->json([
+                    'message' => 'Tracer study tidak ditemukan'
+                ], 404);
+            }
+
+            $tracerStudy->update([
+                'domicile' => $request->domicile,
+                'whatsapp_number' => $request->whatsapp_number,
+                'current_workplace' => $request->current_workplace,
+                'current_job_duration_months' => $request->current_job_duration_months,
+                'company_scale' => $request->company_scale,
+                'job_title' => $request->job_title,
+            ]);
+
             return response()->json([
-                'message' => 'Tracer study tidak ditemukan'
-            ], 404);
+                'message' => 'Tracer study berhasil diperbarui',
+                'data' => $tracerStudy
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Exception: Gagal memperbarui tracer study',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $tracerStudy->update([
-            'domicile' => $request->domicile,
-            'whatsapp_number' => $request->whatsapp_number,
-            'current_workplace' => $request->current_workplace,
-            'current_job_duration_months' => $request->current_job_duration_months,
-            'company_scale' => $request->company_scale,
-            'job_title' => $request->job_title,
-        ]);
-
-        return response()->json([
-            'message' => 'Tracer study berhasil diperbarui',
-            'data' => $tracerStudy
-        ]);
     }
 
     /**
@@ -72,33 +88,34 @@ class TracerStudyController extends Controller
      */
     public function status(Request $request)
     {
-        $tracerStudy = TracerStudy::where('user_id', $request->user()->id)->first();
+        try {
+            $tracerStudy = TracerStudy::where('user_id', $request->user()->id)->first();
 
-        if (!$tracerStudy) {
-            return response()->json([
-                'message' => 'Tracer study tidak ditemukan'
-            ], 404);
-        }
-
-        $requiredFields = [
-            'domicile',
-            'whatsapp_number',
-            'current_workplace',
-            'job_title',
-            'company_scale',
-        ];
-
-        $missingFields = [];
-
-        foreach ($requiredFields as $field) {
-            if (empty($tracerStudy->$field)) {
-                $missingFields[] = $field;
+            if (!$tracerStudy) {
+                return response()->json([
+                    'message' => 'Tracer study tidak ditemukan'
+                ], 404);
             }
-        }
 
-        return response()->json([
-            'completed' => count($missingFields) === 0,
-            'missing_fields' => $missingFields
-        ]);
+            $requiredFields = ['domicile','whatsapp_number','current_workplace','job_title','company_scale'];
+            $missingFields = [];
+
+            foreach ($requiredFields as $field) {
+                if (empty($tracerStudy->$field)) {
+                    $missingFields[] = $field;
+                }
+            }
+
+            return response()->json([
+                'completed' => count($missingFields) === 0,
+                'missing_fields' => $missingFields
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Exception: Terjadi kesalahan saat mengecek status tracer study',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

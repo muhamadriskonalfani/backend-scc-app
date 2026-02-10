@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Mobile\Profile;
 use App\Http\Controllers\Controller;
 use App\Models\Profile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
 
 class ProfileController extends Controller
 {
@@ -14,19 +17,44 @@ class ProfileController extends Controller
      */
     public function show(Request $request)
     {
-        $profile = Profile::where('user_id', $request->user()->id)->first();
+        try {
+            $profile = Profile::with([
+                    'user:id,name,email,role',
+                    'user.tracerStudy:id,user_id,student_id_number,faculty_id,study_program_id,entry_year',
+                    'user.tracerStudy.faculty:id,name',
+                    'user.tracerStudy.studyProgram:id,name',
+                ])
+                ->where('user_id', $request->user()->id)
+                ->first();
 
-        if (!$profile) {
+            if (!$profile) {
+                return response()->json([
+                    'success' => false,
+                    'profile' => null
+                ]);
+            }
+
             return response()->json([
-                'exists' => false,
-                'profile' => null
+                'success' => true,
+                'profile' => [
+                    'name'          => $profile->user->name,
+                    'email'         => $profile->user->email,
+                    'role'          => $profile->user->role,
+                    'image'         => $profile->image,
+                    'gender'        => $profile->gender,
+                    'nim'           => $profile->user->tracerStudy?->student_id_number,
+                    'faculty'       => $profile->user->tracerStudy?->faculty?->name,
+                    'study_program' => $profile->user->tracerStudy?->studyProgram?->name,
+                    'entry_year'    => $profile->user->tracerStudy?->entry_year,
+                ]
             ]);
-        }
 
-        return response()->json([
-            'exists' => true,
-            'profile' => $profile
-        ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Exception: Gagal mengambil data profile'
+            ], 500);
+        }
     }
 
     /**
@@ -53,24 +81,54 @@ class ProfileController extends Controller
             'cv_file' => 'nullable|mimes:pdf|max:5120',
         ]);
 
-        // Upload image
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('profiles/images', 'public');
+        DB::beginTransaction();
+
+        try {
+            // Upload image jika ada
+            if ($request->hasFile('image')) {
+                $filename = 'profile_' . Str::random(20) . '.webp';
+                $path = 'assets/profiles/images';
+
+                $image = ImageManager::imagick()
+                    ->read($request->file('image')->getPathname())
+                    ->cover(600, 600)
+                    ->toWebp(85);
+
+                Storage::disk('public')->put(
+                    $path . '/' . $filename,
+                    (string) $image
+                );
+
+                $validated['image'] = $path . '/' . $filename;
+            }
+
+            // Upload CV
+            if ($request->hasFile('cv_file')) {
+                $cvFile = $request->file('cv_file');
+                $cvName = 'cv_' . uniqid() . '.' . $cvFile->getClientOriginalExtension();
+                $cvLocation = 'assets/profiles/cv';
+
+                $validated['cv_file'] = $cvFile->storeAs($cvLocation, $cvName, 'public');
+            }
+
+            $validated['user_id'] = $request->user()->id;
+
+            $profile = Profile::create($validated);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Profile berhasil dibuat',
+                'profile' => $profile
+            ], 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Profile gagal dibuat',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Upload CV
-        if ($request->hasFile('cv_file')) {
-            $validated['cv_file'] = $request->file('cv_file')->store('profiles/cv', 'public');
-        }
-
-        $validated['user_id'] = $request->user()->id;
-
-        $profile = Profile::create($validated);
-
-        return response()->json([
-            'message' => 'Profile berhasil dibuat',
-            'profile' => $profile
-        ], 201);
     }
 
     /**
@@ -98,27 +156,59 @@ class ProfileController extends Controller
             'cv_file' => 'nullable|mimes:pdf|max:5120',
         ]);
 
-        // Update image
-        if ($request->hasFile('image')) {
-            if ($profile->image) {
-                Storage::disk('public')->delete($profile->image);
+        DB::beginTransaction();
+
+        try {
+            // Update image dengan Imagick + WebP
+            if ($request->hasFile('image')) {
+                if ($profile->image) {
+                    Storage::disk('public')->delete($profile->image);
+                }
+
+                $filename = 'profile_' . Str::random(20) . '.webp';
+                $path = 'assets/profiles/images';
+
+                $image = ImageManager::imagick()
+                    ->read($request->file('image')->getPathname())
+                    ->cover(600, 600)
+                    ->toWebp(85);
+
+                Storage::disk('public')->put(
+                    $path . '/' . $filename,
+                    (string) $image
+                );
+
+                $validated['image'] = $path . '/' . $filename;
             }
-            $validated['image'] = $request->file('image')->store('profiles/images', 'public');
-        }
 
-        // Update CV
-        if ($request->hasFile('cv_file')) {
-            if ($profile->cv_file) {
-                Storage::disk('public')->delete($profile->cv_file);
+            // Update CV
+            if ($request->hasFile('cv_file')) {
+                if ($profile->cv_file) {
+                    Storage::disk('public')->delete($profile->cv_file);
+                }
+
+                $cvFile = $request->file('cv_file');
+                $cvName = 'cv_' . uniqid() . '.' . $cvFile->getClientOriginalExtension();
+                $cvLocation = 'assets/profiles/cv';
+
+                $validated['cv_file'] = $cvFile->storeAs($cvLocation, $cvName, 'public');
             }
-            $validated['cv_file'] = $request->file('cv_file')->store('profiles/cv', 'public');
+
+            $profile->update($validated);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Profile berhasil diperbarui',
+                'profile' => $profile
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Profile gagal diperbarui',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $profile->update($validated);
-
-        return response()->json([
-            'message' => 'Profile berhasil diperbarui',
-            'profile' => $profile
-        ]);
     }
 }

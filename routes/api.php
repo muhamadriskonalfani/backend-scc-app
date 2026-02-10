@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 // MOBILE CONTROLLERS
 use App\Http\Controllers\Mobile\Auth\AuthController as MobileAuthController;
+use App\Http\Controllers\Mobile\Dashboard\DashboardController as MobileDashboardController;
 use App\Http\Controllers\Mobile\TracerStudy\TracerStudyController as MobileTracerStudyController;
 use App\Http\Controllers\Mobile\Profile\ProfileController as MobileProfileController;
 use App\Http\Controllers\Mobile\CampusDirectory\CampusDirectoryController as MobileCampusDirectoryController;
@@ -41,6 +42,19 @@ Route::prefix('mobile')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [MobileAuthController::class, 'logout']);
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| MOBILE DASHBOARD
+|--------------------------------------------------------------------------
+*/
+Route::prefix('mobile')
+    ->middleware(['auth:sanctum', 'status:active'])
+    ->group(function () {
+
+    // Dashboard
+    Route::get('/dashboard', [MobileDashboardController::class, 'index']);
 });
 
 /*

@@ -43,6 +43,7 @@ class CampusInformationController extends Controller
             'meta' => [
                 'current_page' => $information->currentPage(),
                 'last_page' => $information->lastPage(),
+                'per_page' => $information->perPage(),
                 'total' => $information->total(),
             ],
         ]);

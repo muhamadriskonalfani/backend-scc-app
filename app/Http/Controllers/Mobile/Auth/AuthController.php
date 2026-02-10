@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
@@ -46,6 +47,16 @@ class AuthController extends Controller
             'graduation_year' => 'nullable|digits:4|integer|gte:entry_year',
         ]);
 
+        $studyProgram = StudyProgram::where('id', $request->study_program_id)
+            ->where('faculty_id', $request->faculty_id)
+            ->first();
+
+        if (!$studyProgram) {
+            return response()->json([
+                'message' => 'Program studi tidak sesuai dengan fakultas'
+            ], 422);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -69,6 +80,12 @@ class AuthController extends Controller
                 'graduation_year' => $request->graduation_year,
             ]);
 
+            // 3. Simpan ke Profile
+            Profile::create([
+                'user_id' => $user->id,
+                'gender' => $request->gender,
+            ]);
+
             DB::commit();
 
             return response()->json([
@@ -80,8 +97,7 @@ class AuthController extends Controller
             DB::rollBack();
 
             return response()->json([
-                'message' => 'Registrasi gagal',
-                'error' => $e->getMessage()
+                'message' => 'Exception: Registrasi gagal',
             ], 500);
         }
     }
@@ -93,59 +109,68 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        // Cari user
-        $user = User::where('email', $request->email)->first();
+        try {
+            // Cari user
+            $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Email atau password salah'
+                ], 401);
+            }
+
+            // Cek password
+            if (!Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'message' => 'Email atau password salah'
+                ], 401);
+            }
+
+            // Cek status
+            if ($user->status === 'pending') {
+                return response()->json([
+                    'message' => 'Akun Anda masih menunggu persetujuan admin'
+                ], 403);
+            }
+
+            if ($user->status === 'rejected') {
+                return response()->json([
+                    'message' => 'Akun Anda ditolak'
+                ], 403);
+            }
+
+            // Cek role (mobile hanya student & alumni)
+            if (!in_array($user->role, ['student', 'alumni'])) {
+                return response()->json([
+                    'message' => 'Role Anda tidak diizinkan login di aplikasi mobile'
+                ], 403);
+            }
+
+            // Hapus token lama (opsional tapi recommended)
+            $user->tokens()->delete();
+
+            // Buat token baru
+            $token = $user->createToken('mobile-token')->plainTextToken;
+
             return response()->json([
-                'message' => 'Email atau password salah'
-            ], 401);
-        }
+                'message' => 'Login berhasil',
+                'token' => $token,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'status' => $user->status,
+                ]
+            ]);
 
-        // Cek password
-        if (!Hash::check($request->password, $user->password)) {
+        } catch (\Throwable $e) {
+            Log::error($e);
+
             return response()->json([
-                'message' => 'Email atau password salah'
-            ], 401);
+                'message' => 'Exception: Login gagal',
+            ], 500);
         }
-
-        // Cek status
-        if ($user->status === 'pending') {
-            return response()->json([
-                'message' => 'Akun Anda masih menunggu persetujuan admin'
-            ], 403);
-        }
-
-        if ($user->status === 'rejected') {
-            return response()->json([
-                'message' => 'Akun Anda ditolak'
-            ], 403);
-        }
-
-        // Cek role (mobile hanya student & alumni)
-        if (!in_array($user->role, ['student', 'alumni'])) {
-            return response()->json([
-                'message' => 'Role Anda tidak diizinkan login di aplikasi mobile'
-            ], 403);
-        }
-
-        // Hapus token lama (opsional tapi recommended)
-        $user->tokens()->delete();
-
-        // Buat token baru
-        $token = $user->createToken('mobile-token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login berhasil',
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'status' => $user->status,
-            ]
-        ]);
     }
 
     public function logout(Request $request)

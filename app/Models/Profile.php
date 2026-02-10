@@ -8,6 +8,7 @@ class Profile extends Model
 {
     protected $fillable = [
         'user_id',
+        'gender',
         'image',
         'phone',
         'testimonial',
@@ -18,6 +19,11 @@ class Profile extends Model
         'linkedin_url',
         'cv_file',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function faculty()
     {

@@ -6,15 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\CareerInformation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
 
 class JobVacancyController extends Controller
 {
     /**
-     * List career information (student & alumni)
+     * List informasi lowongan kerja 
      */
     public function index()
     {
-        $data = CareerInformation::where('info_type', 'job_vacancy')
+        $data = CareerInformation::query()
+            ->where('info_type', 'job_vacancy')
             ->where('status', 'approved')
             ->latest()
             ->select([
@@ -29,15 +34,21 @@ class JobVacancyController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $data->count() > 0
-                ? 'Data lowongan berhasil diambil'
-                : 'Belum ada lowongan tersedia',
-            'data' => $data
+            'message' => $data->total() > 0
+                ? 'Data lowongan kerja berhasil diambil'
+                : 'Belum ada informasi lowongan kerja',
+            'data' => $data->items(),
+            'meta' => [
+                'current_page' => $data->currentPage(),
+                'last_page'    => $data->lastPage(),
+                'per_page'     => $data->perPage(),
+                'total'        => $data->total(),
+            ],
         ]);
     }
 
     /**
-     * Detail career information
+     * Detail informasi lowongan kerja
      */
     public function show($id)
     {
@@ -72,10 +83,10 @@ class JobVacancyController extends Controller
             'company_name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
             'expired_at' => 'nullable|date|after:today',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->tracerStudy) {
             return response()->json([
@@ -84,23 +95,59 @@ class JobVacancyController extends Controller
             ], 422);
         }
 
-        $data = CareerInformation::create([
-            ...$validated,
-            'info_type' => 'job_vacancy',
-            'status' => 'pending',
-            'created_by' => $user->id,
-            'faculty_id' => $user->tracerStudy->faculty_id,
-        ]);
+        DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lowongan berhasil dibuat dan menunggu persetujuan admin',
-            'data' => $data
-        ], 201);
+        try {
+            $imagePath = null;
+
+            // Upload image jika ada
+            if ($request->hasFile('image')) {
+                $filename = 'job_vacancy_' . Str::random(20) . '.webp';
+                $path = 'assets/job_vacancies';
+
+                $image = ImageManager::imagick()
+                    ->read($request->file('image')->getPathname())
+                    ->cover(600, 600)
+                    ->toWebp(85);
+
+                Storage::disk('public')->put(
+                    $path . '/' . $filename,
+                    (string) $image
+                );
+
+                $imagePath = $path . '/' . $filename;
+            }
+
+            $data = CareerInformation::create([
+                ...$validated,
+                'image' => $imagePath,
+                'info_type' => 'job_vacancy',
+                'status' => 'pending',
+                'created_by' => $user->id,
+                'faculty_id' => $user->tracerStudy->faculty_id,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Informasi lowongan kerja berhasil dibuat dan menunggu persetujuan admin',
+                'data' => $data
+            ], 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan informasi lowongan kerja',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Alumni: update career (ownership protected)
+     * Alumni: update info lowongan kerja
      */
     public function update(Request $request, $id)
     {
@@ -122,20 +169,59 @@ class JobVacancyController extends Controller
             'company_name' => 'sometimes|required|string|max:255',
             'location' => 'sometimes|required|string|max:255',
             'expired_at' => 'nullable|date|after:today',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $data->update([
-            ...$validated,
-            'status' => 'pending',
-            'approved_by' => null,
-        ]);
+        DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lowongan berhasil diperbarui dan menunggu persetujuan admin',
-            'data' => $data
-        ]);
+        try {
+            // Jika upload image baru
+            if ($request->hasFile('image')) {
+
+                // hapus image lama
+                if ($data->image && Storage::disk('public')->exists($data->image)) {
+                    Storage::disk('public')->delete($data->image);
+                }
+
+                $filename = 'job_vacancy_' . Str::random(20) . '.webp';
+                $path = 'assets/job_vacancies';
+
+                $image = ImageManager::imagick()
+                    ->read($request->file('image')->getPathname())
+                    ->cover(600, 600)
+                    ->toWebp(85);
+
+                Storage::disk('public')->put(
+                    $path . '/' . $filename,
+                    (string) $image
+                );
+
+                $validated['image'] = $path . '/' . $filename;
+            }
+
+            $data->update([
+                ...$validated,
+                'status' => 'pending',
+                'approved_by' => null,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Informasi lowongan kerja berhasil diperbarui dan menunggu persetujuan admin',
+                'data' => $data
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -150,7 +236,7 @@ class JobVacancyController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $data->count() > 0
+            'message' => $data->count() 
                 ? 'Data lowongan Anda berhasil diambil'
                 : 'Anda belum memiliki lowongan',
             'data' => $data

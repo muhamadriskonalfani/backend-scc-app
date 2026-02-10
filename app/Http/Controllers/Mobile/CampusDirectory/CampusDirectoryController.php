@@ -13,11 +13,18 @@ class CampusDirectoryController extends Controller
      */
     public function index(Request $request)
     {
+        $request->validate([
+            'type' => 'nullable|in:student,alumni',
+            'faculty_id' => 'nullable|exists:faculties,id',
+            'study_program_id' => 'nullable|exists:study_programs,id',
+            'entry_year' => 'nullable|digits:4|integer|min:2016|max:' . date('Y'),
+        ]);
+
         $query = User::query()
             ->whereIn('role', ['student', 'alumni'])
             ->where('status', 'active')
             ->with([
-                'profile:id,user_id,image',
+                'profile:id,user_id,gender,image',
                 'tracerStudy:id,user_id,faculty_id,study_program_id,entry_year',
                 'tracerStudy.faculty:id,name',
                 'tracerStudy.studyProgram:id,name',
@@ -49,15 +56,17 @@ class CampusDirectoryController extends Controller
             });
         }
 
-        $users = $query
+        $paginator = $query
             ->select('id', 'name', 'role')
+            ->orderBy('name')
             ->paginate(10);
 
         // 🧼 Sanitasi response
-        $users->getCollection()->transform(function ($user) {
+        $data = collect($paginator->items())->map(function ($user) {
             return [
                 'id' => $user->id,
                 'name' => $user->name,
+                'gender' => $user->profile->gender ?? null,
                 'photo' => $user->profile->image ?? null,
                 'faculty' => $user->tracerStudy->faculty->name ?? null,
                 'study_program' => $user->tracerStudy->studyProgram->name ?? null,
@@ -68,7 +77,13 @@ class CampusDirectoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $users
+            'data' => $data,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+            ],
         ]);
     }
 
@@ -81,7 +96,7 @@ class CampusDirectoryController extends Controller
             ->whereIn('role', ['student', 'alumni'])
             ->where('status', 'active')
             ->with([
-                'profile:id,user_id,image,bio,skills,experience,testimonial',
+                'profile:id,user_id,gender,image,bio,skills,experience,testimonial',
                 'tracerStudy.faculty:id,name',
                 'tracerStudy.studyProgram:id,name',
                 'tracerStudy:id,user_id,entry_year,graduation_year,current_workplace,job_title',
@@ -99,6 +114,7 @@ class CampusDirectoryController extends Controller
             'success' => true,
             'data' => [
                 'name' => $user->name,
+                'gender' => $user->profile->gender ?? null,
                 'photo' => $user->profile->image ?? null,
                 'status' => $user->role,
                 'faculty' => $user->tracerStudy->faculty->name ?? null,
