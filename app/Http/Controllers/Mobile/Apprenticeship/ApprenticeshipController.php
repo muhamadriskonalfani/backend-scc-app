@@ -55,7 +55,7 @@ class ApprenticeshipController extends Controller
         $data = CareerInformation::with('creator:id,name')
             ->where('id', $id)
             ->where('info_type', 'apprenticeship')
-            ->where('status', 'approved')
+            // ->where('status', 'approved')
             ->first();
 
         if (!$data) {
@@ -236,10 +236,16 @@ class ApprenticeshipController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $data->count()
+            'message' => $data->total()
                 ? 'Data magang Anda berhasil diambil'
                 : 'Anda belum memiliki informasi magang',
-            'data' => $data
+            'data' => $data->items(),
+            'meta' => [
+                'current_page' => $data->currentPage(),
+                'last_page'    => $data->lastPage(),
+                'per_page'     => $data->perPage(),
+                'total'        => $data->total(),
+            ],
         ]);
     }
 }

@@ -55,7 +55,7 @@ class JobVacancyController extends Controller
         $data = CareerInformation::with('creator:id,name')
             ->where('id', $id)
             ->where('info_type', 'job_vacancy')
-            ->where('status', 'approved')
+            // ->where('status', 'approved')
             ->first();
 
         if (!$data) {
@@ -236,10 +236,16 @@ class JobVacancyController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $data->count() 
+            'message' => $data->total()
                 ? 'Data lowongan Anda berhasil diambil'
                 : 'Anda belum memiliki lowongan',
-            'data' => $data
+            'data' => $data->items(),
+            'meta' => [
+                'current_page' => $data->currentPage(),
+                'last_page'    => $data->lastPage(),
+                'per_page'     => $data->perPage(),
+                'total'        => $data->total(),
+            ],
         ]);
     }
 }

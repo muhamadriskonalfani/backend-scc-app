@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('gender', ['male', 'female'])->nullable();
             $table->string('image')->nullable();
             $table->string('phone', 20)->nullable();
+            $table->string('domicile')->nullable();
 
             $table->text('testimonial')->nullable();
             $table->text('bio')->nullable();
@@ -30,6 +31,7 @@ return new class extends Migration
 
             $table->string('linkedin_url')->nullable();
             $table->string('cv_file')->nullable();
+            $table->string('alumni_verification_file')->nullable();
 
             $table->timestamps();
         });

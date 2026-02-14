@@ -20,7 +20,7 @@ class ProfileController extends Controller
         try {
             $profile = Profile::with([
                     'user:id,name,email,role',
-                    'user.tracerStudy:id,user_id,student_id_number,faculty_id,study_program_id,entry_year',
+                    'user.tracerStudy:id,user_id,student_id_number,faculty_id,study_program_id,entry_year,employment_status,employment_type,current_workplace,job_title,job_category,suggestion_for_university',
                     'user.tracerStudy.faculty:id,name',
                     'user.tracerStudy.studyProgram:id,name',
                 ])
@@ -40,12 +40,30 @@ class ProfileController extends Controller
                     'name'          => $profile->user->name,
                     'email'         => $profile->user->email,
                     'role'          => $profile->user->role,
-                    'image'         => $profile->image,
+
                     'gender'        => $profile->gender,
+                    'image'         => $profile->image,
+                    'phone'         => $profile->phone,
+                    'domicile'      => $profile->domicile,
+                    'testimonial'   => $profile->testimonial,
+                    'bio'           => $profile->bio,
+                    'education'     => $profile->education,
+                    'skills'        => $profile->skills,
+                    'experience'    => $profile->experience,
+                    'linkedin_url'  => $profile->linkedin_url,
+                    'cv_file'       => $profile->cv_file,
+                    'alumni_tag' => $profile->alumni_tag,
+
                     'nim'           => $profile->user->tracerStudy?->student_id_number,
                     'faculty'       => $profile->user->tracerStudy?->faculty?->name,
                     'study_program' => $profile->user->tracerStudy?->studyProgram?->name,
                     'entry_year'    => $profile->user->tracerStudy?->entry_year,
+                    'employment_status' => $profile->user->tracerStudy?->employment_status,
+                    'employment_type' => $profile->user->tracerStudy?->employment_type,
+                    'current_workplace' => $profile->user->tracerStudy?->current_workplace,
+                    'job_title' => $profile->user->tracerStudy?->job_title,
+                    'job_category' => $profile->user->tracerStudy?->job_category,
+                    'suggestion_for_university' => $profile->user->tracerStudy?->suggestion_for_university,
                 ]
             ]);
 
@@ -71,7 +89,9 @@ class ProfileController extends Controller
 
         $validated = $request->validate([
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'alumni_tag' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'phone' => 'nullable|string|max:20',
+            'domicile' => 'nullable|string',
             'testimonial' => 'nullable|string',
             'bio' => 'nullable|string',
             'education' => 'nullable|string',
@@ -100,6 +120,24 @@ class ProfileController extends Controller
                 );
 
                 $validated['image'] = $path . '/' . $filename;
+            }
+            
+            // Upload image (tanda alumni) jika ada
+            if ($request->hasFile('alumni_tag')) {
+                $filename = 'alumni_tags_' . Str::random(20) . '.webp';
+                $path = 'assets/profiles/alumni_tags';
+
+                $image = ImageManager::imagick()
+                    ->read($request->file('alumni_tag')->getPathname())
+                    ->cover(600, 600)
+                    ->toWebp(85);
+
+                Storage::disk('public')->put(
+                    $path . '/' . $filename,
+                    (string) $image
+                );
+
+                $validated['alumni_tag'] = $path . '/' . $filename;
             }
 
             // Upload CV
@@ -146,7 +184,9 @@ class ProfileController extends Controller
 
         $validated = $request->validate([
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'alumni_tag' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'phone' => 'nullable|string|max:20',
+            'domicile' => 'nullable|string',
             'testimonial' => 'nullable|string',
             'bio' => 'nullable|string',
             'education' => 'nullable|string',
@@ -179,6 +219,28 @@ class ProfileController extends Controller
                 );
 
                 $validated['image'] = $path . '/' . $filename;
+            }
+            
+            // Update image (tanda alumni) dengan Imagick + WebP
+            if ($request->hasFile('alumni_tag')) {
+                if ($profile->alumni_tag) {
+                    Storage::disk('public')->delete($profile->alumni_tag);
+                }
+
+                $filename = 'alumni_tags_' . Str::random(20) . '.webp';
+                $path = 'assets/profiles/alumni_tags';
+
+                $image = ImageManager::imagick()
+                    ->read($request->file('alumni_tag')->getPathname())
+                    ->cover(600, 600)
+                    ->toWebp(85);
+
+                Storage::disk('public')->put(
+                    $path . '/' . $filename,
+                    (string) $image
+                );
+
+                $validated['alumni_tag'] = $path . '/' . $filename;
             }
 
             // Update CV

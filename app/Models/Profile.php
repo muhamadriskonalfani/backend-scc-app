@@ -11,6 +11,7 @@ class Profile extends Model
         'gender',
         'image',
         'phone',
+        'domicile',
         'testimonial',
         'bio',
         'education',
@@ -18,6 +19,7 @@ class Profile extends Model
         'experience',
         'linkedin_url',
         'cv_file',
+        'alumni_tag',
     ];
 
     public function user()

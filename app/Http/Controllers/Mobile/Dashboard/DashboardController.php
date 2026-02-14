@@ -44,6 +44,7 @@ class DashboardController extends Controller
                 'id',
                 'title',
                 'image',
+                'description',
                 'created_at'
             ]);
 
