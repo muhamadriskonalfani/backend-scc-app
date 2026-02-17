@@ -40,6 +40,7 @@ return new class extends Migration
 
             $table->timestamp('approved_at')->nullable();
             $table->date('expired_at')->nullable();
+            $table->string('application_link')->nullable();
 
             $table->timestamps();
         });

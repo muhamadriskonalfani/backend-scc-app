@@ -31,7 +31,7 @@ return new class extends Migration
 
             $table->string('linkedin_url')->nullable();
             $table->string('cv_file')->nullable();
-            $table->string('alumni_verification_file')->nullable();
+            $table->string('alumni_tag')->nullable();
 
             $table->timestamps();
         });

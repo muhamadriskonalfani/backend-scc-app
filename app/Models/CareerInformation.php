@@ -19,6 +19,7 @@ class CareerInformation extends Model
         'approved_by',
         'approved_at',
         'expired_at',
+        'application_link',
     ];
 
     public function creator()

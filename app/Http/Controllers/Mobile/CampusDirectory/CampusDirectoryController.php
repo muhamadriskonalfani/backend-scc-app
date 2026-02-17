@@ -99,7 +99,7 @@ class CampusDirectoryController extends Controller
                 'profile:id,user_id,gender,image,bio,skills,experience,testimonial',
                 'tracerStudy.faculty:id,name',
                 'tracerStudy.studyProgram:id,name',
-                'tracerStudy:id,user_id,entry_year,graduation_year,current_workplace,job_title',
+                'tracerStudy:id,user_id,faculty_id,study_program_id,entry_year,graduation_year,current_workplace,job_title',
             ])
             ->first();
 

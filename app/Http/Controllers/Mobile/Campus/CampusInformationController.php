@@ -55,10 +55,9 @@ class CampusInformationController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->user();
-
         $facultyId = optional($user->tracerStudy)->faculty_id;
 
-        $information = CampusInformation::query()
+        $information = CampusInformation::with(['faculty', 'creator'])
             ->where('status', 'active')
             ->where('id', $id)
             ->where(function ($query) use ($facultyId) {
@@ -81,6 +80,17 @@ class CampusInformationController extends Controller
             'title' => $information->title,
             'image' => $information->image,
             'description' => $information->description,
+
+            // ✅ Fakultas tujuan
+            'faculty' => $information->faculty
+                ? $information->faculty->name
+                : 'Semua Fakultas',
+
+            // ✅ Nama pembuat
+            'created_by' => $information->creator
+                ? $information->creator->name
+                : null,
+
             'created_at' => $information->created_at->format('Y-m-d'),
         ]);
     }

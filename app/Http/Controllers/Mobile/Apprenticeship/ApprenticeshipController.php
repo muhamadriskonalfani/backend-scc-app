@@ -28,7 +28,8 @@ class ApprenticeshipController extends Controller
                 'company_name',
                 'location',
                 'image',
-                'created_at'
+                'created_at',
+                'application_link',
             ])
             ->paginate(10);
 
@@ -84,6 +85,7 @@ class ApprenticeshipController extends Controller
             'location' => 'required|string|max:255',
             'expired_at' => 'nullable|date|after:today',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'application_link' => 'required|url|max:255',
         ]);
 
         $user = Auth::user();
@@ -107,7 +109,7 @@ class ApprenticeshipController extends Controller
 
                 $image = ImageManager::imagick()
                     ->read($request->file('image')->getPathname())
-                    ->cover(600, 600)
+                    ->scaleDown(width: 1200)
                     ->toWebp(85);
 
                 Storage::disk('public')->put(
@@ -170,6 +172,7 @@ class ApprenticeshipController extends Controller
             'location' => 'sometimes|required|string|max:255',
             'expired_at' => 'nullable|date|after:today',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'application_link' => 'sometimes|required|url|max:255',
         ]);
 
         DB::beginTransaction();
@@ -188,7 +191,7 @@ class ApprenticeshipController extends Controller
 
                 $image = ImageManager::imagick()
                     ->read($request->file('image')->getPathname())
-                    ->cover(600, 600)
+                    ->scaleDown(width: 1200)
                     ->toWebp(85);
 
                 Storage::disk('public')->put(
