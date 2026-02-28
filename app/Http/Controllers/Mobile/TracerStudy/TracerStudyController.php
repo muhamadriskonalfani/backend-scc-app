@@ -118,40 +118,4 @@ class TracerStudyController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * (Opsional) cek status kelengkapan tracer study
-     */
-    public function status(Request $request)
-    {
-        try {
-            $tracerStudy = TracerStudy::where('user_id', $request->user()->id)->first();
-
-            if (!$tracerStudy) {
-                return response()->json([
-                    'message' => 'Tracer study tidak ditemukan'
-                ], 404);
-            }
-
-            $requiredFields = ['domicile','whatsapp_number','current_workplace','job_title','company_scale'];
-            $missingFields = [];
-
-            foreach ($requiredFields as $field) {
-                if (empty($tracerStudy->$field)) {
-                    $missingFields[] = $field;
-                }
-            }
-
-            return response()->json([
-                'completed' => count($missingFields) === 0,
-                'missing_fields' => $missingFields
-            ]);
-
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Exception: Terjadi kesalahan saat mengecek status tracer study',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
 }
