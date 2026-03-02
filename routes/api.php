@@ -217,6 +217,7 @@ Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:super_admin'])
     ->group(function () {
         Route::get('/tracer-studies', [AdminTracerStudyController::class, 'index']);
+        Route::get('/tracer-studies/export', [AdminTracerStudyController::class, 'export']);
     });
 
 /*
