@@ -9,6 +9,7 @@ use App\Models\TracerStudy;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TracerStudyExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TracerStudyController extends Controller
 {
@@ -79,7 +80,7 @@ class TracerStudyController extends Controller
             'search' => 'nullable|string|max:100'
         ]);
 
-        $data = $this->filteredQuery($request)->paginate(10);
+        $data = $this->filteredQuery($request)->paginate(20);
 
         return response()->json([
             'success' => true,
@@ -95,9 +96,29 @@ class TracerStudyController extends Controller
      */
     public function export(Request $request)
     {
+        $request->validate([
+            'type' => 'required|in:excel,pdf'
+        ]);
+
         $query = $this->filteredQuery($request);
 
         $data = $query->get();
+
+        if ($request->type === 'pdf') {
+
+            $pdf = PDF::loadView('pdf.tracer-study', [
+                'data' => $data,
+                'filters' => $request->only([
+                    'search',
+                    'faculty_id',
+                    'study_program_id',
+                    'entry_year_from',
+                    'entry_year_to'
+                ])
+            ])->setPaper('A4', 'landscape');
+
+            return $pdf->download('tracer-study.pdf');
+        }
 
         return Excel::download(
             new TracerStudyExport($data),
