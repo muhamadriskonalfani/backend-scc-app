@@ -15,10 +15,19 @@ class StudyProgramController extends Controller
     public function index(Request $request)
     {
         $query = StudyProgram::with('faculty:id,name');
+        
+        $search = $request->search;
 
         // Optional filter faculty
         if ($request->faculty_id) {
             $query->where('faculty_id', $request->faculty_id);
+        }
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('code', 'like', "%{$search}%");
+            });
         }
 
         $studyPrograms = $query->latest()->paginate(10);

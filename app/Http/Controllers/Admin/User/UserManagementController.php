@@ -103,7 +103,9 @@ class UserManagementController extends Controller
         $facultyId = $request->admin_faculty_id;
 
         $query = User::where('role', $role)
+
             ->whereHas('tracerStudy', function ($q) use ($facultyId, $request) {
+
                 $q->where('faculty_id', $facultyId);
 
                 // Filter optional
@@ -119,6 +121,25 @@ class UserManagementController extends Controller
                     $q->where('graduation_year', $request->graduation_year);
                 }
             });
+
+        // SEARCH
+        if ($request->filled('search')) {
+
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+
+                // search di tabel users
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+
+                // search di tracer study (nim)
+                ->orWhereHas('tracerStudy', function ($ts) use ($search) {
+                        $ts->where('student_id_number', 'like', "%{$search}%");
+                });
+
+            });
+        }
 
         // Filter status user
         if ($request->status) {

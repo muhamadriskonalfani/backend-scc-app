@@ -14,6 +14,7 @@ class CampusInformationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $search = $request->search;
 
         $query = CampusInformation::query();
 
@@ -24,6 +25,12 @@ class CampusInformationController extends Controller
             $query->where(function ($q) use ($facultyId) {
                 $q->whereNull('faculty_id')
                   ->orWhere('faculty_id', $facultyId);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%");
             });
         }
 

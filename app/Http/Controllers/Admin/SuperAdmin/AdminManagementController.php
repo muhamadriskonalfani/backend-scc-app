@@ -15,14 +15,29 @@ class AdminManagementController extends Controller
     /**
      * List semua admin fakultas
      */
-    public function index()
+    public function index(Request $request)
     {
-        $admins = User::where('role', 'admin')
+        $query = User::query()
+            ->where('role', 'admin')
             ->with([
                 'adminProfile.faculty:id,name'
-            ])
-            ->latest()
-            ->paginate(10);
+            ]);
+
+        $search = $request->search;
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($search) {
+
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhereHas('adminProfile', function ($profileQuery) use ($search) {
+                        $profileQuery->where('nip', 'like', "%{$search}%");
+                });
+
+            });
+        }
+
+        $admins = $query->latest()->paginate(10);
 
         return response()->json([
             'success' => true,

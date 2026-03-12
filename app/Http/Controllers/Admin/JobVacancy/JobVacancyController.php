@@ -19,6 +19,16 @@ class JobVacancyController extends Controller
             ->where('faculty_id', $facultyId);
 
         // Optional filters
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('creator', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
         if ($request->status) {
             $query->where('status', $request->status);
         }

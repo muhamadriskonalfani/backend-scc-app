@@ -13,8 +13,12 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        // Pengecekan Role 
+        // if (Auth::user()->role == 'admin')
+        // if (in_array(Auth::user()->role, ['admin', 'super_admin']))
+
         // ================= USERS =================
         $users = [
             'total' => User::count(),
@@ -40,10 +44,12 @@ class DashboardController extends Controller
             ],
         ];
 
+
         // ================= TRACER STUDY =================
         $tracerStudy = [
             'total' => TracerStudy::count(),
         ];
+
 
         // ================= JOB VACANCY =================
         $jobVacancy = [
@@ -82,6 +88,74 @@ class DashboardController extends Controller
             // 'inactive' => StudyProgram::where('status', 'inactive')->count(),
         ];
 
+
+        // ================================================
+        // USER CHART
+        // ================================================
+        $entryYear = $request->input('entry_year');
+        $userChart = [
+            'entry_year' => $entryYear,
+
+            'alumni' => TracerStudy::join('users', 'users.id', '=', 'tracer_studies.user_id')
+                ->where('users.status', 'active')
+                ->where('users.role', 'alumni')
+                ->when($entryYear, function ($query) use ($entryYear) {
+                    $query->where('entry_year', $entryYear);
+                })
+                ->count(),
+
+            'student' => TracerStudy::join('users', 'users.id', '=', 'tracer_studies.user_id')
+                ->where('users.status', 'active')
+                ->where('users.role', 'student')
+                ->when($entryYear, function ($query) use ($entryYear) {
+                    $query->where('entry_year', $entryYear);
+                })
+                ->count(),
+        ];
+        $userChart['total'] = $userChart['alumni'] + $userChart['student'];
+
+
+        // ================================================
+        // TRACER STUDY CHART
+        // ================================================
+        $graduationYear = $request->input('graduation_year');
+        $tracerStats = TracerStudy::join('users', 'users.id', '=', 'tracer_studies.user_id')
+            ->where('users.status', 'active')
+            ->where('users.role', 'alumni')
+            ->when($graduationYear, function ($query) use ($graduationYear) {
+                    $query->where('graduation_year', $graduationYear);
+                })
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(
+                    CASE 
+                        WHEN employment_status IS NOT NULL 
+                        AND job_title IS NOT NULL
+                        AND employment_type IS NOT NULL
+                        AND job_study_relevance_level IS NOT NULL
+                        THEN 1 ELSE 0 
+                    END
+                ) as completed,
+                SUM(
+                    CASE 
+                        WHEN employment_status IS NULL 
+                        OR job_title IS NULL
+                        OR employment_type IS NULL
+                        OR job_study_relevance_level IS NULL
+                        THEN 1 ELSE 0 
+                    END
+                ) as incomplete
+            ")
+            ->first();
+            
+        $tracerChart = [
+            'graduation_year' => $graduationYear,
+            'total' => $tracerStats->total,
+            'completed' => $tracerStats->completed,
+            'incomplete' => $tracerStats->incomplete,
+        ];
+
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -92,6 +166,8 @@ class DashboardController extends Controller
                 'campus_information' => $campusInfo,
                 'faculty' => $faculty,
                 'study_program' => $studyProgram,
+                'userChart' => $userChart,
+                'tracerChart' => $tracerChart,
             ]
         ]);
     }

@@ -12,9 +12,20 @@ class FacultyController extends Controller
     /**
      * List fakultas
      */
-    public function index()
+    public function index(Request $request)
     {
-        $faculties = Faculty::orderBy('name')->get();
+        $query = Faculty::query();
+
+        $search = $request->search;
+        
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        $faculties = $query->orderBy('name')->get();
 
         return response()->json([
             'success' => true,
