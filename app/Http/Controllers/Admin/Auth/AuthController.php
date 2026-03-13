@@ -3,12 +3,25 @@
 namespace App\Http\Controllers\Admin\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Faculty;
+use App\Models\StudyProgram;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    /**
+     * Get Faculty and Study Programs
+     */
+    public function getMaster()
+    {
+        return response()->json([
+            'faculties' => Faculty::select('id', 'name')->get(),
+            'study_programs' => StudyProgram::select('id', 'faculty_id', 'name')->get(),
+        ]);
+    }
+    
     /**
      * Login Admin & Super Admin
      */

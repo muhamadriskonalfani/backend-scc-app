@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\TracerStudy\TracerStudyController as AdminTracerS
 use App\Http\Controllers\Admin\Campus\CampusInformationController as AdminCampusInformationController;
 use App\Http\Controllers\Admin\Master\FacultyController as AdminFacultyController;
 use App\Http\Controllers\Admin\Master\StudyProgramController as AdminStudyProgramController;
+use App\Http\Controllers\Admin\Setting\SettingController as AdminSettingController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -158,9 +159,7 @@ Route::prefix('admin')->group(function () {
     Route::middleware(['auth:sanctum', 'admin.status'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
 
-        // Route::middleware('role:super_admin')->group(function () {
-        //     Route::post('/register-admin', [AdminAuthController::class, 'registerAdmin']);
-        // });
+        Route::get('/get-master', [AdminAuthController::class, 'getMaster']);
     });
 });
 
@@ -307,4 +306,19 @@ Route::prefix('admin/master')
     Route::delete('/study-programs/{id}', [AdminStudyProgramController::class, 'destroy']);
 });
 
-// end
+/*
+|--------------------------------------------------------------------------
+| ADMIN SETTING  
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:super_admin', 'admin.status'])
+    ->group(function () {
+
+    Route::prefix('setting')->group(function () {
+        Route::get('/users', [AdminSettingController::class, 'index']);
+        Route::post('/users', [AdminSettingController::class, 'registerUsers']);
+    });
+});
+
+// END
