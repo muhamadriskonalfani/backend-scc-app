@@ -56,6 +56,26 @@ class FacultyController extends Controller
     }
 
     /**
+     * Edit fakultas
+     */
+    public function show(Request $request, $id)
+    {
+        $faculty = Faculty::find($id);
+
+        if (!$faculty) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fakultas tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $faculty,
+        ]);
+    }
+
+    /**
      * Update fakultas
      */
     public function update(Request $request, $id)

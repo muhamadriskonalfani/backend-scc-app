@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin\Campus;
 use App\Http\Controllers\Controller;
 use App\Models\CampusInformation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
 
 class CampusInformationController extends Controller
 {
@@ -16,7 +19,9 @@ class CampusInformationController extends Controller
         $user = $request->user();
         $search = $request->search;
 
-        $query = CampusInformation::query();
+        $query = CampusInformation::with([
+            'faculty:id,name',
+        ]);
 
         // Admin fakultas → hanya fakultas sendiri & global
         if ($user->role === 'admin') {
@@ -54,26 +59,56 @@ class CampusInformationController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'faculty_id' => 'nullable|exists:faculties,id',
         ]);
 
-        // Admin fakultas TIDAK BOLEH set faculty_id bebas
-        if ($user->role === 'admin') {
-            $validated['faculty_id'] = $user->adminProfile->faculty_id;
+        try {
+            $imagePath = null;
+
+            // Upload image
+            if ($request->hasFile('image')) {
+                $filename = 'campus_' . Str::random(20) . '.webp';
+                $path = 'assets/campus';
+
+                $image = ImageManager::imagick()
+                    ->read($request->file('image')->getPathname())
+                    ->scaleDown(width: 1200)
+                    ->toWebp(85);
+
+                Storage::disk('public')->put(
+                    $path . '/' . $filename,
+                    (string) $image
+                );
+
+                $imagePath = $path . '/' . $filename;
+            }
+
+            // Force faculty untuk admin
+            if ($user->role === 'admin') {
+                $validated['faculty_id'] = $user->adminProfile->faculty_id;
+            }
+
+            $campusInfo = CampusInformation::create([
+                ...$validated,
+                'image' => $imagePath,
+                'status' => 'active',
+                'created_by' => $user->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Informasi kampus berhasil dibuat',
+                'data' => $campusInfo
+            ], 201);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat informasi kampus',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $campusInfo = CampusInformation::create([
-            ...$validated,
-            'status' => 'active',
-            'created_by' => $user->id,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Informasi kampus berhasil dibuat',
-            'data' => $campusInfo
-        ], 201);
     }
 
     /**
@@ -129,7 +164,8 @@ class CampusInformationController extends Controller
         }
 
         // Cek ownership
-        if ($user->role === 'admin' &&
+        if (
+            $user->role === 'admin' &&
             $campusInfo->faculty_id !== $user->adminProfile->faculty_id
         ) {
             return response()->json([
@@ -140,16 +176,50 @@ class CampusInformationController extends Controller
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'status' => 'sometimes|in:active,ended',
         ]);
 
-        $campusInfo->update($validated);
+        try {
+            // Upload image baru
+            if ($request->hasFile('image')) {
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Informasi kampus berhasil diperbarui',
-            'data' => $campusInfo
-        ]);
+                // Hapus image lama
+                if ($campusInfo->image && Storage::disk('public')->exists($campusInfo->image)) {
+                    Storage::disk('public')->delete($campusInfo->image);
+                }
+
+                $filename = 'campus_' . Str::random(20) . '.webp';
+                $path = 'assets/campus';
+
+                $image = ImageManager::imagick()
+                    ->read($request->file('image')->getPathname())
+                    ->scaleDown(width: 1200)
+                    ->toWebp(85);
+
+                Storage::disk('public')->put(
+                    $path . '/' . $filename,
+                    (string) $image
+                );
+
+                $validated['image'] = $path . '/' . $filename;
+            }
+
+            $campusInfo->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Informasi kampus berhasil diperbarui',
+                'data' => $campusInfo
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui informasi kampus',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

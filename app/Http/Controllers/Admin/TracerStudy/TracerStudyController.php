@@ -125,4 +125,31 @@ class TracerStudyController extends Controller
             'tracer_study.xlsx'
         );
     }
+
+    /**
+     * SHOW
+     */
+    public function show($id)
+    {
+        $tracer = TracerStudy::with([
+                'user:id,name,email',
+                'user.profile:id,user_id,gender',
+                'faculty:id,name',
+                'studyProgram:id,name'
+            ])
+            ->find($id);
+
+        // Jika tidak ditemukan
+        if (!$tracer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tracer study tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $tracer,
+        ]);
+    }
 }

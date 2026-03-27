@@ -53,19 +53,17 @@ class DashboardController extends Controller
 
         // ================= JOB VACANCY =================
         $jobVacancy = [
-            'total' => CareerInformation::where('info_type', 'job_vacancy')->count(),
             'pending' => CareerInformation::where('info_type', 'job_vacancy')->where('status', 'pending')->count(),
-            'active' => CareerInformation::where('info_type', 'job_vacancy')->where('status', 'active')->count(),
-            'ended' => CareerInformation::where('info_type', 'job_vacancy')->where('status', 'ended')->count(),
+            'approved' => CareerInformation::where('info_type', 'job_vacancy')->where('status', 'approved')->count(),
         ];
+        $jobVacancy['total'] = $jobVacancy['pending'] + $jobVacancy['approved'];
 
         // ================= APPRENTICESHIP =================
         $apprenticeship = [
-            'total' => CareerInformation::where('info_type', 'apprenticeship')->count(),
             'pending' => CareerInformation::where('info_type', 'apprenticeship')->where('status', 'pending')->count(),
-            'active' => CareerInformation::where('info_type', 'apprenticeship')->where('status', 'active')->count(),
-            'ended' => CareerInformation::where('info_type', 'apprenticeship')->where('status', 'ended')->count(),
+            'approved' => CareerInformation::where('info_type', 'apprenticeship')->where('status', 'approved')->count(),
         ];
+        $apprenticeship['total'] = $apprenticeship['pending'] + $apprenticeship['approved'];
 
         // ================= CAMPUS INFO =================
         $campusInfo = [

@@ -217,6 +217,7 @@ Route::prefix('admin')
     ->group(function () {
         Route::get('/tracer-studies', [AdminTracerStudyController::class, 'index']);
         Route::get('/tracer-studies/export', [AdminTracerStudyController::class, 'export']);
+        Route::get('/tracer-studies/{id}', [AdminTracerStudyController::class, 'show']);
     });
 
 /*
@@ -285,6 +286,7 @@ Route::prefix('admin')
     Route::prefix('master')->group(function () {
         Route::get('/faculties', [AdminFacultyController::class, 'index']);
         Route::post('/faculties', [AdminFacultyController::class, 'store']);
+        Route::get('/faculties/{id}', [AdminFacultyController::class, 'show']);
         Route::put('/faculties/{id}', [AdminFacultyController::class, 'update']);
         Route::delete('/faculties/{id}', [AdminFacultyController::class, 'destroy']);
     });
