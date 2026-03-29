@@ -195,11 +195,11 @@ Route::prefix('admin')
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'role:admin', 'admin.status', 'admin.faculty'])
+    ->middleware(['auth:sanctum', 'role:admin,super_admin', 'admin.status'])
     ->group(function () {
 
-    Route::get('/students', [AdminUserManagementController::class, 'students']);
-    Route::get('/alumni', [AdminUserManagementController::class, 'alumni']);
+    Route::get('/users', [AdminUserManagementController::class, 'index']);
+    Route::post('/users', [AdminUserManagementController::class, 'store']);
 
     Route::put('/users/{id}/approve', [AdminUserManagementController::class, 'approve']);
     Route::put('/users/{id}/reject', [AdminUserManagementController::class, 'reject']);
@@ -306,21 +306,6 @@ Route::prefix('admin/master')
     Route::get('/study-programs/{id}', [AdminStudyProgramController::class, 'show']);
     Route::put('/study-programs/{id}', [AdminStudyProgramController::class, 'update']);
     Route::delete('/study-programs/{id}', [AdminStudyProgramController::class, 'destroy']);
-});
-
-/*
-|--------------------------------------------------------------------------
-| ADMIN SETTING  
-|--------------------------------------------------------------------------
-*/
-Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'role:super_admin', 'admin.status'])
-    ->group(function () {
-
-    Route::prefix('setting')->group(function () {
-        Route::get('/users', [AdminSettingController::class, 'index']);
-        Route::post('/users', [AdminSettingController::class, 'registerUsers']);
-    });
 });
 
 // END
