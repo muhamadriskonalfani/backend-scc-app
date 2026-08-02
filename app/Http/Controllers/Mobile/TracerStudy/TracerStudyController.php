@@ -36,6 +36,7 @@ class TracerStudyController extends Controller
                     'image' => $tracerStudy->user->profile?->image,
                     'gender' => $tracerStudy->user->profile?->gender,
                     'name' => $tracerStudy->user->name,
+                    'role' => $tracerStudy->user->role,
                     'nim' => $tracerStudy->student_id_number,
 
                     'faculty' => $tracerStudy->faculty->name,

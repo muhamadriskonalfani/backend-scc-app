@@ -103,7 +103,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['auth:sanctum', 'status:active', 'role:student'])
+    ->middleware(['auth:sanctum', 'status:active', 'role:student,alumni']) /* alumni sementara */
     ->group(function () {
         Route::get('/information-campus', [MobileCampusInformationController::class, 'index']);
         Route::get('/information-campus/{id}', [MobileCampusInformationController::class, 'show']);
