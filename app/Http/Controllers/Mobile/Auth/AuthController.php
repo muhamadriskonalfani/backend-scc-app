@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mobile\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\RegistrationSuccessMail;
 use App\Models\Faculty;
 use App\Models\Profile;
 use App\Models\StudyProgram;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
@@ -87,6 +89,11 @@ class AuthController extends Controller
             ]);
 
             DB::commit();
+
+            // Notifikasi Email 
+            Mail::to($user->email)->send(
+                new RegistrationSuccessMail($user)
+            );
 
             return response()->json([
                 'message' => 'Registrasi berhasil. Akun menunggu persetujuan admin.',

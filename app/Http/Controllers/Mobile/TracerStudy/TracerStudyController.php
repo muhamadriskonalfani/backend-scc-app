@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Mobile\TracerStudy;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TracerStudySubmittedMail;
 use App\Models\TracerStudy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class TracerStudyController extends Controller
 {
@@ -86,7 +88,9 @@ class TracerStudyController extends Controller
         ]);
 
         try {
-            $tracerStudy = TracerStudy::where('user_id', $request->user()->id)->first();
+            $tracerStudy = TracerStudy::with(['user:id,email'])
+                ->where('user_id', $request->user()->id)
+                ->first();
 
             if (!$tracerStudy) {
                 return response()->json([
@@ -106,6 +110,11 @@ class TracerStudyController extends Controller
                 'job_study_relevance_level' => $request->job_study_relevance_level,
                 'suggestion_for_university' => $request->suggestion_for_university,
             ]);
+
+            // Notifikasi Email 
+            Mail::to($tracerStudy->user->email)->send(
+                new TracerStudySubmittedMail($tracerStudy->user)
+            );
 
             return response()->json([
                 'message' => 'Tracer study berhasil diperbarui',
