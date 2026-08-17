@@ -90,7 +90,7 @@ class AuthController extends Controller
 
             DB::commit();
 
-            // Notifikasi Email 
+            // NOTIFIKASI EMAIL 
             Mail::to($user->email)->send(
                 new RegistrationSuccessMail($user)
             );

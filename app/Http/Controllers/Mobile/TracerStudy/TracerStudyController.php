@@ -111,7 +111,7 @@ class TracerStudyController extends Controller
                 'suggestion_for_university' => $request->suggestion_for_university,
             ]);
 
-            // Notifikasi Email 
+            // NOTIFIKASI EMAIL 
             Mail::to($tracerStudy->user->email)->send(
                 new TracerStudySubmittedMail($tracerStudy->user)
             );

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin\Apprenticeship;
 
 use App\Http\Controllers\Controller;
+use App\Mail\NewCareerInformationMail;
 use App\Models\CareerInformation;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class ApprenticeshipController extends Controller
 {
@@ -93,9 +96,15 @@ class ApprenticeshipController extends Controller
     {
         $apprenticeship = $this->findApprenticeship($id, $request);
 
-        if ($apprenticeship->status === 'approved') {
+        // if ($apprenticeship->status === 'approved') {
+        //     return response()->json([
+        //         'message' => 'Informasi magang sudah aktif'
+        //     ], 400);
+        // }
+
+        if ($apprenticeship->status !== 'pending') {
             return response()->json([
-                'message' => 'Informasi magang sudah aktif'
+                'message' => 'Informasi magang sudah diproses'
             ], 400);
         }
 
@@ -104,6 +113,50 @@ class ApprenticeshipController extends Controller
             'approved_by' => $request->user()->id,
             'approved_at' => now(),
         ]);
+
+        // NOTIFIKASI EMAIL 
+        // Tahun lulus yang dianggap masih baru
+        $currentYear = now()->year;
+        $minimumGraduationYear = $currentYear - 2;
+
+        // Cari alumni aktif yang baru lulus
+        // $alumni = User::where('role', 'alumni')
+        //     ->where('status', 'active')
+        //     ->whereHas('tracerStudy', function ($query) use ($minimumGraduationYear, $currentYear) {
+        //         $query->whereBetween('graduation_year', [
+        //             $minimumGraduationYear,
+        //             $currentYear
+        //         ]);
+        //     })
+        //     ->get();
+
+        // // Kirim email kepada alumni yang memenuhi kriteria
+        // foreach ($alumni as $user) {
+        //     Mail::to($user->email)->send(
+        //         new NewCareerInformationMail(
+        //             $user,
+        //             $apprenticeship
+        //         )
+        //     );
+        // }
+        $alumni = User::where('role', 'alumni')
+            ->where('status', 'active')
+            ->whereHas('tracerStudy', function ($query) use ($minimumGraduationYear, $currentYear) {
+                $query->whereBetween('graduation_year', [
+                    $minimumGraduationYear,
+                    $currentYear
+                ]);
+            })
+            ->first();
+
+        if ($alumni) {
+            Mail::to($alumni->email)->send(
+                new NewCareerInformationMail(
+                    $alumni,
+                    $apprenticeship
+                )
+            );
+        }
 
         return response()->json([
             'message' => 'Informasi magang berhasil disetujui'
