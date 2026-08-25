@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin\JobVacancy;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendNewCareerInformationEmail;
 use App\Models\CareerInformation;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class JobVacancyController extends Controller
@@ -93,9 +95,15 @@ class JobVacancyController extends Controller
     {
         $vacancy = $this->findVacancy($id, $request);
 
-        if ($vacancy->status === 'approved') {
+        // if ($vacancy->status === 'approved') {
+        //     return response()->json([
+        //         'message' => 'Informasi lowongan pekerjaan sudah aktif'
+        //     ], 400);
+        // }
+
+        if ($vacancy->status !== 'pending') {
             return response()->json([
-                'message' => 'Loker sudah aktif'
+                'message' => 'Informasi lowongan pekerjaan sudah diproses'
             ], 400);
         }
 
@@ -104,6 +112,30 @@ class JobVacancyController extends Controller
             'approved_by' => $request->user()->id,
             'approved_at' => now(),
         ]);
+
+        // NOTIFIKASI EMAIL 
+        // Tahun lulus yang dianggap masih baru
+        $currentYear = now()->year;
+        $minimumGraduationYear = $currentYear - 1;
+
+        // Cari alumni aktif yang baru lulus
+        $alumni = User::where('role', 'alumni')
+            ->where('status', 'active')
+            ->whereHas('tracerStudy', function ($query) use ($minimumGraduationYear, $currentYear) {
+                $query->whereBetween('graduation_year', [
+                    $minimumGraduationYear,
+                    $currentYear
+                ]);
+            })
+            ->get();
+
+        // Kirim email kepada alumni yang memenuhi kriteria
+        foreach ($alumni as $user) {
+            SendNewCareerInformationEmail::dispatch(
+                $user,
+                $vacancy
+            );
+        }
 
         return response()->json([
             'message' => 'Loker berhasil disetujui'

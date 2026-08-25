@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Apprenticeship;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendNewCareerInformationEmail;
 use App\Mail\NewCareerInformationMail;
 use App\Models\CareerInformation;
 use App\Models\User;
@@ -117,28 +118,9 @@ class ApprenticeshipController extends Controller
         // NOTIFIKASI EMAIL 
         // Tahun lulus yang dianggap masih baru
         $currentYear = now()->year;
-        $minimumGraduationYear = $currentYear - 2;
+        $minimumGraduationYear = $currentYear - 1;
 
         // Cari alumni aktif yang baru lulus
-        // $alumni = User::where('role', 'alumni')
-        //     ->where('status', 'active')
-        //     ->whereHas('tracerStudy', function ($query) use ($minimumGraduationYear, $currentYear) {
-        //         $query->whereBetween('graduation_year', [
-        //             $minimumGraduationYear,
-        //             $currentYear
-        //         ]);
-        //     })
-        //     ->get();
-
-        // // Kirim email kepada alumni yang memenuhi kriteria
-        // foreach ($alumni as $user) {
-        //     Mail::to($user->email)->send(
-        //         new NewCareerInformationMail(
-        //             $user,
-        //             $apprenticeship
-        //         )
-        //     );
-        // }
         $alumni = User::where('role', 'alumni')
             ->where('status', 'active')
             ->whereHas('tracerStudy', function ($query) use ($minimumGraduationYear, $currentYear) {
@@ -147,14 +129,13 @@ class ApprenticeshipController extends Controller
                     $currentYear
                 ]);
             })
-            ->first();
+            ->get();
 
-        if ($alumni) {
-            Mail::to($alumni->email)->send(
-                new NewCareerInformationMail(
-                    $alumni,
-                    $apprenticeship
-                )
+        // Kirim email kepada alumni yang memenuhi kriteria
+        foreach ($alumni as $user) {
+            SendNewCareerInformationEmail::dispatch(
+                $user,
+                $apprenticeship
             );
         }
 

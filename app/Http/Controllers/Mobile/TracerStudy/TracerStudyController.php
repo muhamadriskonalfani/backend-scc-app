@@ -88,7 +88,7 @@ class TracerStudyController extends Controller
         ]);
 
         try {
-            $tracerStudy = TracerStudy::with(['user:id,email'])
+            $tracerStudy = TracerStudy::with(['user:id,name,email'])
                 ->where('user_id', $request->user()->id)
                 ->first();
 
