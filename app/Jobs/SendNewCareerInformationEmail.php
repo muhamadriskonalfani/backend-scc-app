@@ -36,6 +36,11 @@ class SendNewCareerInformationEmail implements ShouldQueue
             )
         );
         
-        sleep(10); // Jeda mailtrap versi gratisan, 1 email per 10 detik  
+        /* 
+            Mailtrap punya batas pengiriman yaitu 1 email per 10 detik (untuk versi gratis),
+            Gunakan "sleep(10)" untuk memberi jeda 10 detik,
+            Jika sudah pindah ke Brevo anda bisa komentar kode di bawah ini 
+        */
+        // sleep(10); 
     }
 }
