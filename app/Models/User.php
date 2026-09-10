@@ -73,4 +73,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(AdminProfile::class);
     }
+
+    public function biometricCredential()
+    {
+        return $this->hasOne(BiometricCredential::class);
+    }
 }

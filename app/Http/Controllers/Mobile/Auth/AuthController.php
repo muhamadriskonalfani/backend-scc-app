@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mobile\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Mail\RegistrationSuccessMail;
+use App\Models\BiometricCredential;
 use App\Models\Faculty;
 use App\Models\Profile;
 use App\Models\StudyProgram;
@@ -195,5 +196,132 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Logout berhasil'
         ]);
+    }
+
+    // ===========================
+    // BIOMETRIC LOGIN 
+    // ===========================
+    public function registerBiometric(Request $request)
+    {
+        $request->validate([
+            'credential' => 'required|string|min:20',
+        ]);
+
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            if (!in_array($user->role, ['student', 'alumni'])) {
+                return response()->json([
+                    'message' => 'Role tidak diizinkan'
+                ], 403);
+            }
+
+            BiometricCredential::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                ],
+                [
+                    'credential' => hash(
+                        'sha256',
+                        $request->credential
+                    ),
+                ]
+            );
+
+            return response()->json([
+                'message' => 'Biometric berhasil diaktifkan'
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'message' => 'Exception: Gagal mengaktifkan biometric'
+            ], 500);
+        }
+    }
+    
+    public function biometricLogin(Request $request)
+    {
+        $request->validate([
+            'credential' => 'required|string',
+        ]);
+
+        try {
+            $credentialHash = hash(
+                'sha256',
+                $request->credential
+            );
+
+            $biometricCredential = BiometricCredential::where(
+                'credential',
+                $credentialHash
+            )->first();
+
+            if (!$biometricCredential) {
+                return response()->json([
+                    'message' => 'Credential biometric tidak valid'
+                ], 401);
+            }
+
+            $user = $biometricCredential->user;
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User tidak ditemukan'
+                ], 401);
+            }
+
+            if ($user->status === 'pending') {
+                return response()->json([
+                    'message' => 'Akun Anda masih menunggu persetujuan admin'
+                ], 403);
+            }
+
+            if ($user->status === 'rejected') {
+                return response()->json([
+                    'message' => 'Akun Anda ditolak'
+                ], 403);
+            }
+
+            if (!in_array($user->role, ['student', 'alumni'])) {
+                return response()->json([
+                    'message' => 'Role Anda tidak diizinkan login di aplikasi mobile'
+                ], 403);
+            }
+
+            // Hapus token Sanctum lama
+            $user->tokens()->delete();
+
+            // Buat token baru
+            $token = $user
+                ->createToken('mobile-token')
+                ->plainTextToken;
+
+            return response()->json([
+                'message' => 'Login biometric berhasil',
+                'token' => $token,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'status' => $user->status,
+                ]
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error($e);
+
+            return response()->json([
+                'message' => 'Exception: Login biometric gagal'
+            ], 500);
+        }
     }
 }

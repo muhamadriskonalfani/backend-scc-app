@@ -35,12 +35,17 @@ Route::get('/user', function (Request $request) {
 | MOBILE AUTH
 |--------------------------------------------------------------------------
 */
-Route::prefix('mobile')->group(function () {
+Route::prefix('mobile')
+    ->middleware('appcheck')
+    ->group(function () {
+        
     Route::get('/register-meta', [MobileAuthController::class, 'registerMeta']);
     Route::post('/register', [MobileAuthController::class, 'register']);
     Route::post('/login', [MobileAuthController::class, 'login']);
+    Route::post('/biometric-login', [MobileAuthController::class, 'biometricLogin']);
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/biometric/register', [MobileAuthController::class, 'registerBiometric']);
         Route::post('/logout', [MobileAuthController::class, 'logout']);
     });
 });
@@ -51,7 +56,7 @@ Route::prefix('mobile')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
     ->group(function () {
 
     // Dashboard
@@ -64,7 +69,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['auth:sanctum', 'status:active', 'role:alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:alumni'])
     ->group(function () {
         Route::get('/tracer-study', [MobileTracerStudyController::class, 'index']);
         Route::put('/tracer-study', [MobileTracerStudyController::class, 'update']);
@@ -77,7 +82,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
     ->group(function () {
         Route::get('/profile', [MobileProfileController::class, 'show']);
         Route::post('/profile', [MobileProfileController::class, 'store']);
@@ -90,7 +95,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
     ->group(function () {
 
         Route::get('/directory', [MobileCampusDirectoryController::class, 'index']);
@@ -103,7 +108,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['auth:sanctum', 'status:active', 'role:student,alumni']) /* alumni sementara */
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni']) /* alumni sementara */
     ->group(function () {
         Route::get('/information-campus', [MobileCampusInformationController::class, 'index']);
         Route::get('/information-campus/{id}', [MobileCampusInformationController::class, 'show']);
@@ -115,7 +120,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
     ->group(function () {
 
         Route::get('/jobvacancy', [MobileJobVacancyController::class, 'index']);
@@ -134,7 +139,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
     ->group(function () {
 
         Route::get('/apprenticeships', [MobileApprenticeshipController::class, 'index']);
