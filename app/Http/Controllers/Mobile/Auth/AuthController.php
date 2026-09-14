@@ -148,11 +148,11 @@ class AuthController extends Controller
             }
 
             // Cek role (mobile hanya student & alumni)
-            if (!in_array($user->role, ['student', 'alumni'])) {
-                return response()->json([
-                    'message' => 'Role Anda tidak diizinkan login di aplikasi mobile'
-                ], 403);
-            }
+            // if (!in_array($user->role, ['student', 'alumni'])) {
+            //     return response()->json([
+            //         'message' => 'Role Anda tidak diizinkan login di aplikasi mobile'
+            //     ], 403);
+            // }
 
             // Hapus token lama (opsional tapi recommended)
             $user->tokens()->delete();

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mobile\Profile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Profile;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -12,19 +13,61 @@ use Intervention\Image\ImageManager;
 
 class ProfileController extends Controller
 {
-    /**
-     * Tampilkan profile user login
-     */
+    // dummy profile untuk admin/super_admin 
+    private function dummyProfile(User $user)
+    {
+        return [
+            'name'          => $user->name,
+            'email'         => $user->email,
+            'role'          => $user->role,
+
+            'gender'        => null,
+            'image'         => null,
+            'phone'         => null,
+            'domicile'      => null,
+            'testimonial'   => null,
+            'bio'           => null,
+            'education'     => null,
+            'skills'        => null,
+            'experience'    => null,
+            'linkedin_url'  => null,
+            'cv_file'       => null,
+            'alumni_tag'    => null,
+
+            // Tidak memiliki data tracer
+            'nim'                   => null,
+            'faculty'               => null,
+            'study_program'         => null,
+            'entry_year'            => null,
+            'employment_status'     => null,
+            'employment_type'       => null,
+            'current_workplace'     => null,
+            'job_title'             => null,
+            'job_category'          => null,
+            'suggestion_for_university' => null,
+        ];
+    }
+
+    // Tampilkan profile user login
     public function show(Request $request)
     {
         try {
+            $user = $request->user();
+
+            if (in_array($user->role, ['admin', 'super_admin'])) {
+                return response()->json([
+                    'success' => true,
+                    'profile' => $this->dummyProfile($user),
+                ]);
+            }
+
             $profile = Profile::with([
                     'user:id,name,email,role',
                     'user.tracerStudy:id,user_id,student_id_number,faculty_id,study_program_id,entry_year,employment_status,employment_type,current_workplace,job_title,job_category,suggestion_for_university',
                     'user.tracerStudy.faculty:id,name',
                     'user.tracerStudy.studyProgram:id,name',
                 ])
-                ->where('user_id', $request->user()->id)
+                ->where('user_id', $user->id)
                 ->first();
 
             if (!$profile) {
@@ -52,17 +95,17 @@ class ProfileController extends Controller
                     'experience'    => $profile->experience,
                     'linkedin_url'  => $profile->linkedin_url,
                     'cv_file'       => $profile->cv_file,
-                    'alumni_tag' => $profile->alumni_tag,
+                    'alumni_tag'    => $profile->alumni_tag,
 
                     'nim'           => $profile->user->tracerStudy?->student_id_number,
                     'faculty'       => $profile->user->tracerStudy?->faculty?->name,
                     'study_program' => $profile->user->tracerStudy?->studyProgram?->name,
                     'entry_year'    => $profile->user->tracerStudy?->entry_year,
-                    'employment_status' => $profile->user->tracerStudy?->employment_status,
-                    'employment_type' => $profile->user->tracerStudy?->employment_type,
-                    'current_workplace' => $profile->user->tracerStudy?->current_workplace,
-                    'job_title' => $profile->user->tracerStudy?->job_title,
-                    'job_category' => $profile->user->tracerStudy?->job_category,
+                    'employment_status'         => $profile->user->tracerStudy?->employment_status,
+                    'employment_type'           => $profile->user->tracerStudy?->employment_type,
+                    'current_workplace'         => $profile->user->tracerStudy?->current_workplace,
+                    'job_title'                 => $profile->user->tracerStudy?->job_title,
+                    'job_category'              => $profile->user->tracerStudy?->job_category,
                     'suggestion_for_university' => $profile->user->tracerStudy?->suggestion_for_university,
                 ]
             ]);

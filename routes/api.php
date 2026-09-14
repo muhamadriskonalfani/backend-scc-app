@@ -56,7 +56,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active'])
     ->group(function () {
 
     // Dashboard
@@ -69,7 +69,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:alumni,admin,super_admin'])
     ->group(function () {
         Route::get('/tracer-study', [MobileTracerStudyController::class, 'index']);
         Route::put('/tracer-study', [MobileTracerStudyController::class, 'update']);
@@ -82,7 +82,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active'])
     ->group(function () {
         Route::get('/profile', [MobileProfileController::class, 'show']);
         Route::post('/profile', [MobileProfileController::class, 'store']);
@@ -95,7 +95,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active'])
     ->group(function () {
 
         Route::get('/directory', [MobileCampusDirectoryController::class, 'index']);
@@ -108,7 +108,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni']) /* alumni sementara */
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni,admin,super_admin']) /* alumni sementara */
     ->group(function () {
         Route::get('/information-campus', [MobileCampusInformationController::class, 'index']);
         Route::get('/information-campus/{id}', [MobileCampusInformationController::class, 'show']);
@@ -120,7 +120,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active'])
     ->group(function () {
 
         Route::get('/jobvacancy', [MobileJobVacancyController::class, 'index']);
@@ -139,7 +139,7 @@ Route::prefix('mobile')
 |--------------------------------------------------------------------------
 */
 Route::prefix('mobile')
-    ->middleware(['appcheck', 'auth:sanctum', 'status:active', 'role:student,alumni'])
+    ->middleware(['appcheck', 'auth:sanctum', 'status:active'])
     ->group(function () {
 
         Route::get('/apprenticeships', [MobileApprenticeshipController::class, 'index']);

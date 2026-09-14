@@ -5,11 +5,42 @@ namespace App\Http\Controllers\Mobile\TracerStudy;
 use App\Http\Controllers\Controller;
 use App\Mail\TracerStudySubmittedMail;
 use App\Models\TracerStudy;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class TracerStudyController extends Controller
 {
+    // dummy tracer study untuk admin/super_admin 
+    private function dummyTracerStudy(User $user)
+    {
+        return [
+            'image'             => null,
+            'gender'            => null,
+            'name'              => $user->name,
+            'role'              => $user->role,
+            'nim'               => null,
+
+            'faculty'           => null,
+            'study_program'     => null,
+            'entry_year'        => null,
+            'graduation_year'   => null,
+            'domicile'          => null,
+            'phone'             => null,
+
+            'employment_status'         => null,
+            'current_workplace'         => null,
+            'company_scale'             => null,
+            'job_title'                 => null,
+            'job_category'              => null,
+            'employment_type'           => null,
+            'employment_sector'         => null,
+            'monthly_income_range'      => null,
+            'job_study_relevance_level' => null,
+            'suggestion_for_university' => null,
+        ];
+    }
+
     /**
      * Get tracer study milik user login
      * (untuk halaman tracer study - read only)
@@ -17,13 +48,28 @@ class TracerStudyController extends Controller
     public function index(Request $request)
     {
         try {
+            $user = $request->user();
+
+            // ==========================================
+            // ADMIN / SUPER ADMIN
+            // ==========================================
+            if (in_array($user->role, ['admin', 'super_admin'])) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $this->dummyTracerStudy($user),
+                ]);
+            }
+
+            // ==========================================
+            // STUDENT / ALUMNI
+            // ==========================================
             $tracerStudy = TracerStudy::with([
                     'user:id,name,role',
                     'user.profile:id,user_id,gender,image,domicile,phone',
-                    'faculty:id,name', 
+                    'faculty:id,name',
                     'studyProgram:id,name'
                 ])
-                ->where('user_id', $request->user()->id)
+                ->where('user_id', $user->id)
                 ->first();
 
             if (!$tracerStudy) {
@@ -41,8 +87,8 @@ class TracerStudyController extends Controller
                     'role' => $tracerStudy->user->role,
                     'nim' => $tracerStudy->student_id_number,
 
-                    'faculty' => $tracerStudy->faculty->name,
-                    'study_program' => $tracerStudy->studyProgram->name,
+                    'faculty' => $tracerStudy->faculty?->name,
+                    'study_program' => $tracerStudy->studyProgram?->name,
                     'entry_year' => $tracerStudy->entry_year,
                     'graduation_year' => $tracerStudy->graduation_year,
                     'domicile' => $tracerStudy->user->profile?->domicile,
