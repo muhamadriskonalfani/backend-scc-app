@@ -16,17 +16,22 @@ class CampusInformationController extends Controller
     {
         $user = $request->user();
 
-        $facultyId = optional($user->tracerStudy)->faculty_id;
+        $query = CampusInformation::query()
+            ->where('status', 'active');
 
-        $information = CampusInformation::query()
-            ->where('status', 'active')
-            ->where(function ($query) use ($facultyId) {
+        if (!in_array($user->role, ['admin', 'super_admin'])) {
+            $facultyId = optional($user->tracerStudy)->faculty_id;
+
+            $query->where(function ($query) use ($facultyId) {
                 $query->whereNull('faculty_id');
 
                 if ($facultyId) {
                     $query->orWhere('faculty_id', $facultyId);
                 }
-            })
+            });
+        }
+
+        $information = $query
             ->latest()
             ->paginate(10);
 
@@ -55,19 +60,24 @@ class CampusInformationController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->user();
-        $facultyId = optional($user->tracerStudy)->faculty_id;
 
-        $information = CampusInformation::with(['faculty', 'creator'])
+        $query = CampusInformation::with(['faculty', 'creator'])
             ->where('status', 'active')
-            ->where('id', $id)
-            ->where(function ($query) use ($facultyId) {
+            ->where('id', $id);
+
+        if (!in_array($user->role, ['admin', 'super_admin'])) {
+            $facultyId = optional($user->tracerStudy)->faculty_id;
+
+            $query->where(function ($query) use ($facultyId) {
                 $query->whereNull('faculty_id');
 
                 if ($facultyId) {
                     $query->orWhere('faculty_id', $facultyId);
                 }
-            })
-            ->first();
+            });
+        }
+
+        $information = $query->first();
 
         if (!$information) {
             return response()->json([
